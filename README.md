@@ -1,3 +1,4 @@
+<<<<<<< HEAD
  # 🏥 Clinical Trial Data Intelligence Platform (NEST 2.0)
 
 ## 📋 Overview
@@ -40,3 +41,7 @@ pip install -r requirements.txt
 
 # Run application
 streamlit run app.py
+=======
+# clinical-trial-dashboard
+Real-time Clinical Trial Data Intelligence Platform - MCA Project
+>>>>>>> 17973c21ad0a2a59a74ec1faf49633fc9a74ac8b
