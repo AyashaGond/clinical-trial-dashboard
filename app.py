@@ -1,11 +1,15 @@
-# app.py - PROFESSIONAL VERSION
+# app.py - PROFESSIONAL PHARMACEUTICAL DASHBOARD VERSION
+from login import main_login
+from utils.helpers import DataHelper
+from calculations import load_and_process_data
+from config import DEFAULT_TRIAL, ACTIVE_TRIALS
 import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta  # ← ADD THIS
+from datetime import datetime, timedelta
 import sys
 import os
-# ADD THESE LINES after other imports (around line 10)
+import time
 import plotly.graph_objects as go
 import plotly.express as px
 
@@ -13,10 +17,6 @@ import plotly.express as px
 sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 
 # Import project modules
-from config import TRIAL_INFO
-from calculations import load_and_process_data
-from utils.helpers import DataHelper
-from login import main_login
 
 # Page configuration
 st.set_page_config(
@@ -31,7 +31,7 @@ st.set_page_config(
     }
 )
 
-# Custom CSS for professional interface
+# Enhanced Custom CSS for pharmaceutical look
 st.markdown("""
 <style>
     /* Main container styling */
@@ -51,117 +51,175 @@ st.markdown("""
         margin-bottom: 25px;
     }
     
-    /* Metrics cards */
-    .metric-card {
+    /* Pharmaceutical style cards */
+    .pharma-card {
         background: white;
         padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        border-left: 4px solid;
-        transition: transform 0.2s;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border-left: 5px solid;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
     }
     
-    .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    .pharma-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.12);
     }
     
-    .metric-value {
-        font-size: 32px;
-        font-weight: 700;
-        color: #1a1a1a;
-        margin: 5px 0;
+    /* Metrics cards with gradient backgrounds */
+    .metric-card-pharma {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 25px;
+        border-radius: 15px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 3px 15px rgba(31, 60, 136, 0.1);
+        height: 100%;
     }
     
-    .metric-label {
+    .metric-value-pharma {
+        font-size: 36px;
+        font-weight: 800;
+        color: #1f3c88;
+        margin: 10px 0;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    
+    .metric-label-pharma {
         font-size: 14px;
         color: #666;
-        font-weight: 500;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
-    .metric-trend {
+    .metric-trend-pharma {
         font-size: 12px;
-        padding: 2px 8px;
-        border-radius: 10px;
+        padding: 4px 12px;
+        border-radius: 12px;
         display: inline-block;
         margin-top: 5px;
+        font-weight: 600;
     }
     
-    .trend-up { background: #d4edda; color: #155724; }
-    .trend-down { background: #f8d7da; color: #721c24; }
-    .trend-neutral { background: #e2e3e5; color: #383d41; }
+    .trend-up-pharma { background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); color: #155724; border: 1px solid #b1dfbb; }
+    .trend-down-pharma { background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); color: #721c24; border: 1px solid #f1b0b7; }
+    .trend-neutral-pharma { background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%); color: #383d41; border: 1px solid #c8cbcf; }
     
-    /* Status indicators */
-    .status-good { border-color: #28a745; }
-    .status-warning { border-color: #ffc107; }
-    .status-critical { border-color: #dc3545; }
-    .status-info { border-color: #17a2b88; }
+    /* Status indicators with pharma colors */
+    .status-good { border-left-color: #28a745; }
+    .status-warning { border-left-color: #ffc107; }
+    .status-critical { border-left-color: #dc3545; }
+    .status-info { border-left-color: #17a2b8; }
+    .status-primary { border-left-color: #1f3c88; }
     
     /* Progress bars */
-    .progress-container {
+    .progress-container-pharma {
         background: #e9ecef;
-        height: 8px;
-        border-radius: 4px;
-        margin: 10px 0;
+        height: 10px;
+        border-radius: 5px;
+        margin: 15px 0;
         overflow: hidden;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
     
-    .progress-bar {
+    .progress-bar-pharma {
         height: 100%;
-        border-radius: 4px;
-    }
-    
-    /* Tab styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2px;
-        background: #f8f9fa;
-        padding: 5px;
-        border-radius: 8px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        height: 45px;
-        border-radius: 6px;
-        font-weight: 500;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background-color: white;
-        color: #1f3c88;
+        border-radius: 5px;
+        background: linear-gradient(90deg, #1f3c88 0%, #0d1b2a 100%);
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
-    /* Button styling */
-    .stButton button {
-        border-radius: 8px;
-        font-weight: 500;
-    }
-    
-    /* Data table styling */
-    .dataframe {
-        border-radius: 8px;
-        overflow: hidden;
+    /* Professional tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2px;
+        background: #f8f9fa;
+        padding: 8px;
+        border-radius: 12px;
         border: 1px solid #dee2e6;
     }
     
-    /* Remove Streamlit hamburger menu */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    
-    /* Make sidebar more visible */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
-        border-right: 1px solid #dee2e6;
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #495057;
+        transition: all 0.3s;
+        padding: 0 20px;
+        border: 1px solid transparent;
     }
     
-    /* Sidebar section headers */
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: rgba(31, 60, 136, 0.05);
+        border-color: rgba(31, 60, 136, 0.2);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #1f3c88 0%, #0d1b2a 100%);
+        color: white !important;
+        box-shadow: 0 3px 10px rgba(31, 60, 136, 0.2);
+        border-color: #1f3c88;
+    }
+    
+    /* Responsive tabs */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 2px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .stTabs [data-baseweb="tab"] {
+        flex: 1 0 calc(33.333% - 4px) !important;
+        font-size: 12px !important;
+        height: 45px !important;
+        padding: 0 8px !important;
+        margin-bottom: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stTabs [data-baseweb="tab"] {
+        flex: 1 0 calc(50% - 4px) !important;
+        font-size: 11px !important;
+        height: 40px !important;
+    }
+}
+    
+    /* Button styling */
+    .stButton button {
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 8px 20px;
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .stButton button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Sidebar enhancements */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border-right: 1px solid #e2e8f0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    }
+    
     .stSidebar h3 {
         color: #1f3c88;
-        font-weight: 600;
+        font-weight: 700;
         margin-top: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+        font-size: 18px;
     }
     
-    /* Sidebar widgets */
+    /* Widget styling */
     .stSidebar .stSelectbox,
     .stSidebar .stMultiselect,
     .stSidebar .stSlider,
@@ -169,397 +227,656 @@ st.markdown("""
     .stSidebar .stDateInput {
         background: white;
         border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 8px;
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     
-    /* Ensure sidebar is wide enough */
-    section[data-testid="stSidebar"] > div {
-        padding: 20px;
-        min-width: 280px !important;
+    /* Header styling */
+    .pharma-header {
+        background: linear-gradient(135deg, #1f3c88 0%, #0d1b2a 100%) !important;
+        padding: 25px 30px !important;
+        border-radius: 20px !important;
+        margin: -20px -20px 30px -20px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+        position: relative !important;
+        overflow: visible !important;
+    }
+
+    * Make sure text is visible */
+    .pharma-header h1,
+    .pharma-header span,
+    .pharma-header div {
+        color: white !important;
     }
     
-    /* Better sidebar toggle visibility */
-    button[title="View fullscreen"] {
+    /* Remove Streamlit defaults */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stDeployButton {display:none;}
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
         background: #1f3c88;
-        color: white;
-        border-radius: 50%;
+        border-radius: 4px;
     }
     
-    .navbar {
-    background: white;
-    padding: 15px 25px;
-    border-bottom: 1px solid #e9ecef;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    ::-webkit-scrollbar-thumb:hover {
+        background: #0d1b2a;
+    }
+    
+        /* Header styling matching screenshot */
+    .stButton button[kind="primary"] {
+        background: linear-gradient(135deg, #1f3c88 0%, #0d1b2a 100%);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .stButton button[kind="secondary"] {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        font-weight: 500;
+        font-size: 13px;
+    }
+
+    .stButton button[kind="secondary"]:hover {
+        background: rgba(255,255,255,0.2);
+        border-color: rgba(255,255,255,0.3);
+    }
+
+    /* Icon button styling */
+    .stButton button {
+        min-width: 40px;
+        height: 40px;
+        border-radius: 20px;
+        padding: 0;
+    }
+
+    /* Make sure header text is visible */
+    [data-testid="stHeader"] {
+        background-color: #1f3c88;
+    }
+
+    /* Adjust main container padding */
+    .main .block-container {
+        padding-top: 1rem;
+    }
+    
+    /* Badge styling */
+    .badge {
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .badge-success {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        color: white;
+    }
+    
+    .badge-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: #212529;
+    }
+    
+    .badge-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+    }
+    
+    .badge-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+    }
+    
+    .badge-primary {
+        background: linear-gradient(135deg, #1f3c88 0%, #0d1b2a 100%);
+        color: white;
+    }
+    
+    /* Filter chips */
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        margin: 3px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-chip:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Data table styling */
+    .stDataFrame {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+    
+    /* Metric grid layout */
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    @media (max-width: 1200px) {
+        .metric-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .metric-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+/* User profile styling in sidebar */
+.stButton button {
+    justify-content: flex-start;
+    text-align: left;
+    padding-left: 15px;
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 20px;
-    font-weight: 700;
-    color: #1f3c88;
+.stButton button[kind="secondary"] {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
 }
 
-.user-profile {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.user-badge {
+.stButton button[kind="secondary"]:hover {
     background: #e9ecef;
-    padding: 5px 12px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: 600;
+    border-color: #ced4da;
 }
 
-.notification-bell {
-    position: relative;
-    cursor: pointer;
-    font-size: 20px;
+/* Make profile menu items look like proper menu items */
+div[data-testid="stExpander"] div[role="button"] {
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 2px 0;
 }
 
-.notification-count {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #dc3545;
-    color: white;
-    font-size: 10px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+div[data-testid="stExpander"] div[role="button"]:hover {
+    background: #f8f9fa;
 }
+
+/* ========== RESPONSIVE DESIGN ========== */
+
+/* Base responsive settings */
+.main .block-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    max-width: 100% !important;
+}
+
+/* Responsive metric cards */
+@media (max-width: 1200px) {
+    .metric-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .stDataFrame {
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .metric-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Stack columns on mobile */
+    [data-testid="column"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+    
+    /* Adjust header on mobile */
+    .pharma-header {
+        padding: 15px !important;
+        margin: -1rem -1rem 1rem -1rem !important;
+    }
+    
+    /* Make disease buttons wrap on mobile */
+    .disease-buttons-container {
+        flex-wrap: wrap !important;
+        gap: 5px !important;
+    }
+    
+    .disease-button {
+        flex: 1 0 calc(50% - 10px) !important;
+        min-width: 140px !important;
+    }
+    
+    /* Adjust sidebar width on mobile */
+    section[data-testid="stSidebar"] {
+        min-width: 100px !important;
+        max-width: 280px !important;
+    }
+    
+    /* Make tables scrollable on mobile */
+    .stDataFrame {
+        overflow-x: auto !important;
+    }
+    
+    /* Adjust font sizes for mobile */
+    h1 {
+        font-size: 22px !important;
+    }
+    
+    h2 {
+        font-size: 18px !important;
+    }
+    
+    h3 {
+        font-size: 16px !important;
+    }
+    
+    .metric-value-pharma {
+        font-size: 28px !important;
+    }
+    
+    .metric-label-pharma {
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Further adjustments for very small screens */
+    .pharma-header h1 {
+        font-size: 20px !important;
+    }
+    
+    .metric-card-pharma {
+        padding: 15px !important;
+    }
+    
+    /* Single column layout for everything */
+    .stTabs [data-baseweb="tab-list"] {
+        flex-wrap: wrap !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        flex: 1 0 calc(50% - 4px) !important;
+        font-size: 12px !important;
+        height: 40px !important;
+        padding: 0 10px !important;
+    }
+    
+    /* Adjust button sizes */
+    .stButton button {
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+    }
+}
+
+/* Make images/charts responsive */
+.stPlotlyChart, .stDataFrame, img {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* Responsive columns */
+.stColumn {
+    min-width: 0 !important;
+}
+
+/* Hide non-essential elements on very small screens */
+@media (max-width: 360px) {
+    .stMetric delta {
+        display: none !important;
+    }
+    
+    .subtitle {
+        display: none !important;
+    }
+}
+
+/* Ensure content doesn't overflow */
+* {
+    box-sizing: border-box !important;
+}
+
+/* Responsive table */
+div[data-testid="stDataFrameResizable"] {
+    overflow-x: auto !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
+def is_mobile():
+    """Detect if user is on mobile device"""
+    try:
+        user_agent = st.query_params.get("user_agent", "")
+        if not user_agent:
+            return False
+        mobile_keywords = ['mobile', 'android', 'iphone', 'ipad', 'tablet']
+        return any(keyword in user_agent.lower() for keyword in mobile_keywords)
+    except:
+        return False
+
 @st.cache_data
-def load_data():
-    """Load and cache data"""
-    return load_and_process_data()
+def load_data(disease=None):
+    """Load and cache data with optional disease filter"""
+    patients, sites, queries = load_and_process_data()
+    
+    # If disease filter is provided, filter the data
+    if disease and 'disease' in patients.columns:
+        patients = patients[patients['disease'] == disease]
+        # Also filter sites based on patients
+        site_ids = patients['site_id'].unique()
+        sites = sites[sites['site_id'].isin(site_ids)]
+    
+    return patients, sites, queries
 
-    # Data Summary Section - ADD THIS
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📈 Data Summary")
-    
-    # Show data statistics
-    if not patients.empty:
-        total_patients = len(patients)
-        clean_patients = len(patients[patients['clean_status'] == 'Clean']) if 'clean_status' in patients.columns else 0
-        active_patients = len(patients[patients['subject_status'] == 'Active']) if 'subject_status' in patients.columns else 0
-        
-        st.sidebar.info(f"""
-        **Dataset Summary:**
-        • **Total Patients:** {total_patients}
-        • **Active Patients:** {active_patients}
-        • **Clean Patients:** {clean_patients} ({(clean_patients/total_patients*100):.1f}%)
-        • **Sites:** {len(patients['site_id'].unique()) if 'site_id' in patients.columns else 0}
-        • **Queries:** {patients['open_queries'].sum() if 'open_queries' in patients.columns else 0}
-        """)
+def create_pharma_header(user):
+    """Create clean pharmaceutical header with only platform name and login time"""
 
-def create_metric_card(title, value, delta=None, status="info", progress=None):
-    """Create a professional metric card"""
-    status_colors = {
-        "good": "#28a745",
-        "warning": "#ffc107", 
-        "critical": "#dc3545",
-        "info": "#17a2b8"
-    }
+    # Use the blue color from your screenshot
+    header_bg_color = "#0d1b2a"  # Professional blue
+     
+     # Check if mobile
+    mobile = is_mobile()
     
-    status_class = f"status-{status}"
-    border_color = status_colors.get(status, "#17a2b8")
-    
-    card_html = f"""
-    <div class="metric-card {status_class}" style="border-left-color: {border_color};">
-        <div class="metric-label">{title}</div>
-        <div class="metric-value">{value}</div>
-    """
-    
-    if delta:
-        trend_class = "trend-up" if "+" in str(delta) else "trend-down"
-        card_html += f'<div class="metric-trend {trend_class}">{delta}</div>'
-    
-    if progress is not None:
-        progress_width = min(max(progress, 0), 100)
-        progress_color = "#28a745" if progress >= 70 else ("#ffc107" if progress >= 50 else "#dc3545")
-        card_html += f"""
-        <div class="progress-container">
-            <div class="progress-bar" style="width: {progress_width}%; background: {progress_color};"></div>
-        </div>
-        """
-    
-    card_html += "</div>"
-    return card_html
-
-def create_navigation_bar(user):
-    """Create professional navigation bar using Streamlit native components"""
-    
-    # Create a container for the navbar
-    navbar = st.container()
-    
-    with navbar:
-        # Create columns for layout
-        col1, col2, col3 = st.columns([2, 3, 2])
+    # Adjust font sizes based on device
+    title_size = "22px" if mobile else "26px"
+    subtitle_size = "12px" if mobile else "14px"
+     
+    # Create header with Streamlit components
+    with st.container():
+        col1, col2 = st.columns([6, 1])
         
         with col1:
-            # Logo and title
-            st.markdown("""
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 24px;">🏥</span>
-                <span style="font-size: 20px; font-weight: 700; color: #1f3c88;">
-                    Clinical Intelligence
-                </span>
+            # SIMPLE header without disease info
+            st.markdown(f"""
+            <div style="
+                display: flex;
+                align-items: flex-start;
+                gap: 20px;
+                margin-top: 10px;
+            ">
+                <div style="
+                    background: linear-gradient(135deg, #1f3c88 0%, #0d1b2a 100%);
+                    padding: 15px;
+                    border-radius: 15px;
+                    width: 90px;
+                    height: 100px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+                    flex-shrink: 0;
+                ">
+                    <span style="font-size: 40px; color: white;">🏥</span>
+                </div>
+                <div>
+                <div style="
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    height: 80px;  /* Match logo height */
+                ">
+                    <h1 style="
+                        color: #1f3c88;
+                        margin: 0px 0px 1px 0px;
+                        font-size: 36px;
+                        font-weight: 800;
+                        letter-spacing: .5px;
+                        line-height: 0.9;
+                    ">Clinical Intelligence Platform</h1>
+                    <div style="
+                        color: #666;
+                        font-size: 14px;
+                        font-weight: 500;
+                        line-height: 0.9;
+                    ">
+                        <div>Clinical Trial Monitoring Dashboard</div>
+                        <div style="margin-top: 5px; color: #888; font-size: 13px;line-height: 1.1;margin-top: 0.2px;">
+                        • Last login: {datetime.now().strftime('%H:%M')}
+                        </div>
+                    </div>
+                </div>
             </div>
             """, unsafe_allow_html=True)
         
-        with col3:
-            # Right side: notifications and user info
-            user_col1, user_col2, user_col3 = st.columns([1, 2, 1])
-            
-            with user_col1:
-                # Notification bell with badge
-                st.markdown("""
-                <div style="position: relative; display: inline-block;">
-                    <span style="font-size: 18px;">🔔</span>
-                    <span style="position: absolute; top: -8px; right: -8px; background: #dc3545; 
-                           color: white; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; 
-                           display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                        3
-                    </span>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with user_col2:
-                # User info
-                st.markdown(f"""
-                <div style="text-align: right;">
-                    <div style="font-weight: 600; font-size: 14px;">{user.get('name', 'System Administrator')}</div>
-                    <div style="background: #e9ecef; padding: 3px 10px; border-radius: 12px; 
-                         font-size: 11px; font-weight: 600; display: inline-block;">
-                        {user.get('role', 'Admin')}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with user_col3:
-                # Logout button using Streamlit button
-                if st.button("🚪", help="Logout", key="navbar_logout"):
-                    st.session_state['logout_clicked'] = True
-    
-    # Add separator after navbar
-    st.markdown("---")
-    
-    # Handle logout
-    if st.session_state.get('logout_clicked', False):
-        # Clear session and rerun
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
-                    
+        with col2:
+            # Empty column
+            st.markdown("""
+            <div style="height: 20px"></div>
+            """, unsafe_allow_html=True)
+
+
+def create_metric_card(title, value, delta=None, status="info", progress=None, icon=None):
+    """Create a pharmaceutical metric card"""
+
+    status_colors = {
+        "good": "#28a745",
+        "warning": "#ffc107",
+        "critical": "#dc3545",
+        "info": "#17a2b8",
+        "primary": "#1f3c88"
+    }
+
+    border_color = status_colors.get(status, "#1f3c88")
+
+    # Build HTML with pharmaceutical styling
+    html = f"""
+    <div class="metric-card-pharma">
+        <div class="metric-label-pharma">
+            {icon if icon else ""} {title}
+        </div>
+        <div class="metric-value-pharma">{value}</div>
+    """
+
+    if delta:
+        trend_class = "trend-up-pharma" if "+" in str(delta) else (
+            "trend-down-pharma" if "-" in str(delta) else "trend-neutral-pharma")
+        html += f'<div class="metric-trend-pharma {trend_class}">{delta}</div>'
+
+    if progress is not None:
+        progress_width = min(max(progress, 0), 100)
+        progress_color = "#28a745" if progress >= 70 else (
+            "#ffc107" if progress >= 50 else "#dc3545")
+        html += f"""<div class="progress-container-pharma">
+            <div class="progress-bar-pharma" style="width: {progress_width}%; background: {progress_color};"></div>
+        </div>
+        """
+
+    html += "</div>"
+    return html
+
+
 def create_visualizations(patients, sites):
     """Create professional visualizations"""
-    
+
     # Initialize default figures
     fig1 = go.Figure()
     fig2 = go.Figure()
     fig3 = go.Figure()
-    
+
     # 1. DQI Trend Chart
     if 'site_id' in patients.columns and 'dqi_score' in patients.columns and len(patients) > 0:
         fig1 = go.Figure()
         site_count = 0
-        
+
         for site in patients['site_id'].unique()[:5]:  # Show top 5 sites
             site_data = patients[patients['site_id'] == site]
             if len(site_data) > 0:
                 fig1.add_trace(go.Scatter(
                     x=list(range(len(site_data))),
                     y=site_data['dqi_score'].sort_values().values,
-                    mode='lines',
+                    mode='lines+markers',
                     name=site,
-                    line=dict(width=2)
+                    line=dict(width=3),
+                    marker=dict(size=8)
                 ))
                 site_count += 1
-        
+
         if site_count > 0:
             fig1.update_layout(
-                title="DQI Trends by Site",
-                height=300,
+                title=dict(text="DQI Trends by Site",
+                           font=dict(size=16, color='#1f3c88')),
+                height=350,
                 xaxis_title="Patient Rank",
                 yaxis_title="DQI Score",
                 hovermode='x unified',
-                template='plotly_white'
+                template='plotly_white',
+                plot_bgcolor='rgba(248,249,250,0.8)',
+                paper_bgcolor='white',
+                font=dict(family="Segoe UI, system-ui, sans-serif")
             )
         else:
-            # Empty figure with message
             fig1.add_annotation(
                 text="No data available for DQI trends",
                 xref="paper", yref="paper",
                 x=0.5, y=0.5, showarrow=False
             )
-    else:
-        # Empty figure with message
-        fig1.add_annotation(
-            text="DQI data not available",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False
-        )
-    
+
     # 2. Clean Status Pie Chart
     if 'clean_status' in patients.columns and len(patients) > 0:
         clean_counts = patients['clean_status'].value_counts()
         if len(clean_counts) > 0:
-            fig2 = px.pie(
+            colors = ['#28a745' if x ==
+                      'Clean' else '#dc3545' for x in clean_counts.index]
+            fig2 = go.Figure(data=[go.Pie(
+                labels=clean_counts.index,
                 values=clean_counts.values,
-                names=clean_counts.index,
-                title="Clean Status Distribution",
-                color=clean_counts.index,
-                color_discrete_map={'Clean': '#28a745', 'Not Clean': '#dc3545'},
-                hole=0.4
+                hole=0.4,
+                marker=dict(colors=colors),
+                textinfo='label+percent',
+                textfont=dict(size=12),
+                hovertemplate='<b>%{label}</b><br>Patients: %{value}<br>Percentage: %{percent}'
+            )])
+            fig2.update_layout(
+                title=dict(text="Clean Status Distribution",
+                           font=dict(size=16, color='#1f3c88')),
+                height=350,
+                showlegend=True,
+                font=dict(family="Segoe UI, system-ui, sans-serif")
             )
-            fig2.update_layout(height=300)
-        else:
-            fig2.add_annotation(
-                text="No clean status data",
-                xref="paper", yref="paper",
-                x=0.5, y=0.5, showarrow=False
-            )
-    else:
-        fig2.add_annotation(
-            text="Clean status data not available",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False
-        )
-    
+
     # 3. Site Performance Heatmap
     if not sites.empty and 'avg_dqi' in sites.columns and len(sites) > 0:
+        sites_sorted = sites.sort_values('avg_dqi', ascending=False)
         fig3 = go.Figure(data=go.Heatmap(
-            z=[sites['avg_dqi'].values],
-            x=sites['site_id'].values,
+            z=[sites_sorted['avg_dqi'].values],
+            x=sites_sorted['site_id'].values,
             y=['DQI Score'],
             colorscale='RdYlGn',
             zmin=0,
             zmax=100,
-            text=[sites['avg_dqi'].values],
+            text=[sites_sorted['avg_dqi'].values],
             texttemplate='%{text:.1f}',
-            textfont={"size": 14},
+            textfont={"size": 12, "color": "black"},
             hoverinfo='text',
-            hovertext=[f"Site: {site}<br>DQI: {dqi:.1f}" for site, dqi in zip(sites['site_id'], sites['avg_dqi'])]
+            hovertemplate='Site: %{x}<br>DQI: %{z:.1f}<extra></extra>'
         ))
         fig3.update_layout(
-            title="Site Performance Heatmap",
-            height=200,
+            title=dict(text="Site Performance Heatmap",
+                       font=dict(size=16, color='#1f3c88')),
+            height=250,
             xaxis_title="Site",
-            margin=dict(l=20, r=20, t=40, b=20)
+            margin=dict(l=20, r=20, t=40, b=20),
+            font=dict(family="Segoe UI, system-ui, sans-serif")
         )
-    else:
-        # Empty figure with message
-        fig3 = go.Figure()
-        fig3.add_annotation(
-            text="Site performance data not available",
-            xref="paper", yref="paper",
-            x=0.5, y=0.5, showarrow=False
-        )
-        fig3.update_layout(height=200)
-    
+
     return fig1, fig2, fig3
 
-def main_dashboard():
-    """Main dashboard function"""
-    
-    # Check login
-    if not main_login():
-        return
-    
-    user = st.session_state.get('user', {})
-    
-    # Navigation Bar
-    create_navigation_bar(user)
-    
-    # Logout functionality
-    if st.session_state.get('logout_btn', False):
-        from login import LoginSystem
-        login_system = LoginSystem()
-        login_system.logout()
-        st.session_state['logged_in'] = False
-        st.rerun()
-    
-    # Load data
-    with st.spinner("🔄 Loading clinical trial data..."):
-        try:
-            patients, sites, queries = load_data()
-        except Exception as e:
-            st.error(f"Error loading data: {e}")
-            st.info("Please run 'python data_generator.py' first")
-            return
-    
-    if patients.empty:
-        st.warning("📊 No patient data found. Generating sample data...")
-        return
-    
-    # Sidebar Filters
+
+def create_sidebar_filters(patients, user, current_disease=None):
+    """Create professional sidebar filters with user profile at bottom"""
+
     with st.sidebar:
         st.markdown("### 🔍 Filters & Controls")
+
+        # Show current disease
+        if current_disease:
+            st.info(f"**Viewing:** {current_disease} Trials")
         
-        # Site selection
+        # Site selection - NO DEFAULT SELECTIONS
         st.markdown("**Site Selection**")
         if 'site_id' in patients.columns:
             site_options = patients['site_id'].unique()
             selected_sites = st.multiselect(
                 "Select sites",
                 options=site_options,
-                default=site_options[:3],
-                label_visibility="collapsed"
+                default=[],  # EMPTY ARRAY = NO DEFAULT SELECTIONS
+                label_visibility="collapsed",
+                placeholder="Select sites...",
+                key="site_filter"
             )
         else:
             selected_sites = []
-        
-        # Patient status
+
+        # Patient status - NO DEFAULT SELECTIONS
         st.markdown("**Patient Status**")
         if 'subject_status' in patients.columns:
             status_options = patients['subject_status'].unique()
             selected_status = st.multiselect(
                 "Filter by status",
                 options=status_options,
-                default=['Active', 'Completed'],
-                label_visibility="collapsed"
+                default=[],  # EMPTY ARRAY = NO DEFAULT SELECTIONS
+                label_visibility="collapsed",
+                placeholder="Select statuses...",
+                key="status_filter"
             )
         else:
             selected_status = []
-        
-        # Clean status toggle
+
+        # Clean status toggle - SET DEFAULT TO 'All'
         st.markdown("**Clean Status**")
         clean_filter = st.radio(
             "Show patients",
             options=['All', 'Clean Only', 'Issues Only'],
             horizontal=True,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            index=0,  # 'All' is default
+            key="clean_filter"
         )
-        
-        # Risk level selector
+
+        # Risk level selector - NO DEFAULT SELECTIONS
         st.markdown("**Risk Level**")
         if 'risk_level' in patients.columns:
             risk_options = patients['risk_level'].unique()
             risk_filter = st.multiselect(
                 "Select risk levels",
                 options=risk_options,
-                default=risk_options,
-                label_visibility="collapsed"
+                default=[],  # EMPTY ARRAY = NO DEFAULT SELECTIONS
+                label_visibility="collapsed",
+                placeholder="Select risk levels...",
+                key="risk_filter"
             )
         else:
             risk_filter = []
-        
-        # DQI range slider
+
+        # DQI range slider - SHOW FULL RANGE
         st.markdown("**DQI Score Range**")
         if 'dqi_score' in patients.columns:
             min_dqi = int(patients['dqi_score'].min())
@@ -568,565 +885,896 @@ def main_dashboard():
                 "Adjust DQI range",
                 min_value=min_dqi,
                 max_value=max_dqi,
-                value=(max(min_dqi, 50), min(max_dqi, 100)),
-                label_visibility="collapsed"
+                value=(min_dqi, max_dqi),  # FULL RANGE AS DEFAULT
+                label_visibility="collapsed",
+                key="dqi_filter"
             )
         else:
             dqi_range = (0, 100)
-        
-        # Date range picker
+
+        # Date range picker - SHOW FULL DATE RANGE
         st.markdown("**Date Range**")
         if 'enrollment_date' in patients.columns:
             try:
-                patients['enrollment_date'] = pd.to_datetime(patients['enrollment_date'])
+                patients['enrollment_date'] = pd.to_datetime(
+                    patients['enrollment_date'])
                 min_date = patients['enrollment_date'].min().date()
                 max_date = patients['enrollment_date'].max().date()
-                
+
                 date_range = st.date_input(
                     "Select date range",
-                    value=(min_date, max_date),
-                    label_visibility="collapsed"
+                    value=(min_date, max_date),  # FULL DATE RANGE AS DEFAULT
+                    label_visibility="collapsed",
+                    key="date_filter"
                 )
             except:
-                date_range = (datetime.now().date() - timedelta(days=365), datetime.now().date())
+                date_range = (datetime.now().date() -
+                              timedelta(days=365), datetime.now().date())
         else:
-            date_range = (datetime.now().date() - timedelta(days=365), datetime.now().date())
-        
+            date_range = (datetime.now().date() -
+                          timedelta(days=365), datetime.now().date())
+
+
+        # Export Demo Feature
         st.markdown("---")
-        
-        # Action buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🔄 Refresh", use_container_width=True):
-                st.cache_data.clear()
-                st.rerun()
-        
-        with col2:
-            if st.button("📥 Export", use_container_width=True):
-                patients.to_csv('clinical_trial_export.csv', index=False)
-                st.success("✅ Data exported!")
-        
+        with st.expander("📊 Export Demo & Reports", expanded=False):
+            st.markdown("**Generate Professional Reports:**")
+
+            report_type = st.selectbox(
+                "Report Type",
+                ["Executive Summary", "Site Performance",
+                    "Data Quality", "Safety Analysis"],
+                index=0,  # First item as default
+                key="report_type"
+            )
+
+            format_type = st.radio(
+                "Format",
+                ["PDF", "Excel", "HTML"],
+                horizontal=True,
+                index=0,  # First item as default
+                key="format_type"
+            )
+
+            if st.button("🔄 Generate Demo Report", type="secondary", use_container_width=True, key="generate_report"):
+                with st.spinner(f"Creating {report_type} report..."):
+                    time.sleep(2)
+                    st.success(f"✅ {report_type} report generated!")
+
         # Trial info in sidebar
         st.markdown("---")
         with st.expander("📋 Trial Information", expanded=False):
             st.info(f"""
-            **Therapeutic Area:** {TRIAL_INFO['therapeutic_area']}
-            **Phase:** {TRIAL_INFO['phase']}
-            **Target Enrollment:** {TRIAL_INFO['target_patients']}
-            **Duration:** {TRIAL_INFO['start_date']} to {TRIAL_INFO['expected_end_date']}
+            **Therapeutic Area:** {DEFAULT_TRIAL['therapeutic_area']}
+            **Phase:** {DEFAULT_TRIAL['phase']}
+            **Target Enrollment:** {DEFAULT_TRIAL['target_patients']}
+            **Duration:** {DEFAULT_TRIAL['start_date']} to {DEFAULT_TRIAL['expected_end_date']}
             **User Role:** {user.get('role', 'User')}
             """)
+
+        # Add spacing
+        st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True)
+
+        # USER PROFILE SECTION AT BOTTOM (YouTube/Amazon style)
+        st.markdown("---")
+
+        # Create a container for the user profile
+        profile_container = st.container()
+
+        with profile_container:
+            # User profile header (always visible)
+            col1, col2, col3 = st.columns([1, 3, 1])
+
+            with col1:
+                # User avatar
+                role_color = '#1f3c88' if user.get(
+                    'role') == 'Admin' else '#28a745'
+                st.markdown(f"""
+                <div style="
+                    background: {role_color};
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: 700;
+                    font-size: 17px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    margin-top: 20px;
+                ">{user.get('name', 'U')[0].upper()}</div>
+                """, unsafe_allow_html=True)
+
+            with col2:
+                # User info
+                st.markdown(f"""
+                <div style="margin-top: 8px;">
+                    <div style="font-size: 14px; font-weight: 600; color: #333;">{user.get('name', 'System User')}</div>
+                    <div style="font-size: 12px; color: #666;">{user.get('role', 'User')}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with col3:
+                # Three-dot menu button
+                st.markdown("<div style='margin-top: 10px;'></div>",
+                            unsafe_allow_html=True)
+                if st.button("⋮", key="profile_menu_button", help="User menu"):
+                    st.session_state['show_profile_menu'] = not st.session_state.get(
+                        'show_profile_menu', False)
+
+        # Profile menu dropdown (appears below when clicked)
+        if st.session_state.get('show_profile_menu', False):
+            st.markdown("---")
+            st.markdown("### 👤 User Menu")
+
+            # Menu items as buttons
+            if st.button("👤 Your Profile", key="your_profile", use_container_width=True):
+                st.session_state['show_profile_settings'] = True
+                st.session_state['show_profile_menu'] = False
+
+            if st.button("⚙️ Settings", key="user_settings", use_container_width=True):
+                st.session_state['show_account_settings'] = True
+                st.session_state['show_profile_menu'] = False
+
+            if st.button("🔐 Security", key="user_security", use_container_width=True):
+                st.session_state['show_security_settings'] = True
+                st.session_state['show_profile_menu'] = False
+
+            if st.button("📊 Preferences", key="user_preferences", use_container_width=True):
+                st.session_state['show_preferences'] = True
+                st.session_state['show_profile_menu'] = False
+
+            st.markdown("---")
+
+            if st.button("📖 Help & Support", key="user_help", use_container_width=True):
+                st.session_state['show_help'] = True
+                st.session_state['show_profile_menu'] = False
+
+            if st.button("💬 Send Feedback", key="user_feedback", use_container_width=True):
+                st.session_state['show_feedback'] = True
+                st.session_state['show_profile_menu'] = False
+
+            if st.button("🔄 Switch Account", key="switch_account", use_container_width=True):
+                st.session_state['show_switch_account'] = True
+                st.session_state['show_profile_menu'] = False
+
+            st.markdown("---")
+
+            if st.button("🚪 Logout", type="primary", key="sidebar_logout", use_container_width=True):
+                # Clear session state and rerun
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
+                st.rerun()
+
+        # Handle the profile settings expanders
+        if st.session_state.get('show_profile_settings', False):
+            with st.expander("👤 Profile Settings", expanded=True):
+                st.subheader("Edit Profile")
+                col1, col2 = st.columns(2)
+                with col1:
+                    new_name = st.text_input("Full Name", value=user.get(
+                        'name', ''), key="profile_name")
+                with col2:
+                    new_role = st.selectbox("Role", ["Admin", "Investigator", "Monitor", "Viewer"],
+                                            index=["Admin", "Investigator", "Monitor", "Viewer"].index(
+                                                user.get('role', 'User'))
+                                            if user.get('role') in ["Admin", "Investigator", "Monitor", "Viewer"] else 0,
+                                            key="profile_role")
+
+                new_email = st.text_input("Email", value=user.get(
+                    'email', ''), key="profile_email")
+                new_phone = st.text_input("Phone", value=user.get(
+                    'phone', ''), key="profile_phone")
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("💾 Save Changes", key="save_profile", use_container_width=True):
+                        st.success("Profile updated successfully!")
+                        st.session_state['show_profile_settings'] = False
+                with col2:
+                    if st.button("✖️ Cancel", key="cancel_profile", use_container_width=True):
+                        st.session_state['show_profile_settings'] = False
+
+        if st.session_state.get('show_account_settings', False):
+            with st.expander("⚙️ Account Settings", expanded=True):
+                st.subheader("Account Configuration")
+                notification_prefs = st.multiselect(
+                    "Notifications",
+                    ["Email Alerts", "SMS Notifications",
+                        "Browser Notifications", "Weekly Reports"],
+                    default=["Email Alerts", "Weekly Reports"],
+                    key="notifications"
+                )
+
+                timezone = st.selectbox(
+                    "Timezone", ["UTC", "EST", "CST", "PST", "IST"], key="timezone")
+                date_format = st.selectbox(
+                    "Date Format", ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"], key="date_format")
+
+                if st.button("💾 Save Preferences", key="save_account_settings", use_container_width=True):
+                    st.success("Account settings saved!")
+                    st.session_state['show_account_settings'] = False
+
+        if st.session_state.get('show_security_settings', False):
+            with st.expander("🔐 Security Settings", expanded=True):
+                st.subheader("Security Configuration")
+                current_pass = st.text_input(
+                    "Current Password", type="password", key="current_pass")
+                new_pass = st.text_input(
+                    "New Password", type="password", key="new_pass")
+                confirm_pass = st.text_input(
+                    "Confirm New Password", type="password", key="confirm_pass")
+
+                two_factor = st.checkbox(
+                    "Enable Two-Factor Authentication", value=True, key="two_factor")
+                session_timeout = st.slider(
+                    "Session Timeout (minutes)", 15, 240, 60, key="session_timeout")
+
+                if st.button("🔒 Update Security", key="update_security", use_container_width=True):
+                    st.success("Security settings updated!")
+                    st.session_state['show_security_settings'] = False
+
+        if st.session_state.get('show_preferences', False):
+            with st.expander("📊 Dashboard Preferences", expanded=True):
+                st.subheader("Customize Dashboard")
+                default_tab = st.selectbox(
+                    "Default Tab on Login",
+                    ["Performance Dashboard", "Patient Management", "Site Analytics",
+                     "Risk Monitoring", "AI Insights", "Disease Analytics"],
+                    key="default_tab"
+                )
+
+                theme = st.radio(
+                    "Theme", ["Light", "Dark", "Auto"], key="theme")
+                density = st.radio(
+                    "Data Density", ["Comfortable", "Compact"], key="density")
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    show_tutorial = st.checkbox(
+                        "Show Tutorial on Login", value=True, key="show_tutorial")
+                with col2:
+                    auto_refresh = st.checkbox(
+                        "Auto-refresh Data", value=False, key="auto_refresh")
+
+                if st.button("💾 Save Preferences", key="save_preferences", use_container_width=True):
+                    st.success("Dashboard preferences saved!")
+                    st.session_state['show_preferences'] = False
+
+        if st.session_state.get('show_help', False):
+            with st.expander("📖 Help & Support", expanded=True):
+                st.subheader("Help Resources")
+                st.info("""
+                **Need Help?**
+                - 📞 Support Hotline: 1-800-CLINICAL
+                - 📧 Email: support@clinicalintel.com
+                - 🏢 Office Hours: Mon-Fri 9AM-6PM EST
+                
+                **Quick Links:**
+                - User Manual
+                - Video Tutorials
+                - FAQ Section
+                - API Documentation
+                """)
+
+                issue_type = st.selectbox("Report an Issue",
+                                          ["Technical Problem", "Data Issue",
+                                              "Feature Request", "Other"],
+                                          key="issue_type")
+                issue_desc = st.text_area(
+                    "Description", key="issue_desc", height=100)
+
+                if st.button("📨 Submit Ticket", key="submit_ticket", use_container_width=True):
+                    st.success("Help ticket submitted!")
+                    st.session_state['show_help'] = False
+
+        if st.session_state.get('show_feedback', False):
+            with st.expander("💬 Send Feedback", expanded=True):
+                st.subheader("Send Feedback")
+                feedback_type = st.selectbox("Feedback Type",
+                                             ["Bug Report", "Feature Request",
+                                                 "General Feedback", "Complaint"],
+                                             key="feedback_type")
+                feedback_desc = st.text_area(
+                    "Your Feedback", key="feedback_desc", height=100)
+                rating = st.slider("Rating", 1, 5, 5, key="rating")
+
+                if st.button("📨 Submit Feedback", key="submit_feedback", use_container_width=True):
+                    st.success("Thank you for your feedback!")
+                    st.session_state['show_feedback'] = False
+
+        if st.session_state.get('show_switch_account', False):
+            with st.expander("🔄 Switch Account", expanded=True):
+                st.subheader("Switch Account")
+                accounts = [
+                    {"name": user.get('name', 'System User'), "role": user.get(
+                        'role', 'User'), "current": True},
+                    {"name": "John Researcher",
+                        "role": "Principal Investigator", "current": False},
+                    {"name": "Sarah Monitor",
+                        "role": "Clinical Monitor", "current": False},
+                    {"name": "Admin User", "role": "System Admin", "current": False}
+                ]
+
+                selected_account = st.selectbox(
+                    "Select Account",
+                    [acc["name"] + " (" + acc["role"] +
+                     ")" for acc in accounts],
+                    index=0,
+                    key="selected_account"
+                )
+
+                if st.button("🔓 Switch", key="switch_account_btn", use_container_width=True):
+                    st.warning("Account switching requires re-authentication")
+                    st.session_state['show_switch_account'] = False
+
+    return selected_sites, selected_status, clean_filter, risk_filter, dqi_range, date_range
+
+
+def main_dashboard():
+    """Main dashboard function"""
     
+    # Show loading state
+    with st.spinner("🔄 Loading Clinical Intelligence Platform..."):
+        time.sleep(0.5)  # Small delay for better UX
+    
+    # Add viewport meta tag
+    st.markdown("""
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    """, unsafe_allow_html=True)
+    
+    # Check login
+    if not main_login():
+        return
+
+    user = st.session_state.get('user', {})
+    
+    # Get current disease from session state (default to 'Oncology')
+    current_disease = st.session_state.get('current_disease', 'Oncology')
+
+    # Create clean header
+    st.markdown("""
+    <div style="
+        background: #1f3c88;
+        padding: 15px 20px;
+        margin: -20px -20px 25px -20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        position: relative;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    ">
+    """, unsafe_allow_html=True)
+
+    create_pharma_header(user)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+
+    # Load data WITH disease filter
+    with st.spinner(f"🔄 Loading {current_disease} trial data..."):
+        try:
+            # Pass the current disease to filter data
+            patients, sites, queries = load_data(current_disease)
+        except Exception as e:
+            st.error(f"Error loading {current_disease} data: {e}")
+            st.info("Please run 'python data_generator.py' first")
+            return
+
+    if patients.empty:
+        st.warning(f"📊 No {current_disease} patient data found.")
+        # Offer to generate data
+        if st.button(f"Generate {current_disease} Sample Data"):
+            # You would call your data generator here
+            st.info("Please run 'python data_generator.py' to generate data")
+        return
+    
+    # Create sidebar filters - pass disease info
+    selected_sites, selected_status, clean_filter, risk_filter, dqi_range, date_range = create_sidebar_filters(
+        patients, user, current_disease)
+
     # Apply filters
     filtered_patients = patients.copy()
-    
+
     if selected_sites and len(selected_sites) > 0:
-        filtered_patients = filtered_patients[filtered_patients['site_id'].isin(selected_sites)]
-    
+        filtered_patients = filtered_patients[filtered_patients['site_id'].isin(
+            selected_sites)]
+
     if selected_status and len(selected_status) > 0:
-        filtered_patients = filtered_patients[filtered_patients['subject_status'].isin(selected_status)]
-    
+        filtered_patients = filtered_patients[filtered_patients['subject_status'].isin(
+            selected_status)]
+
     if clean_filter == 'Clean Only':
         filtered_patients = filtered_patients[filtered_patients['clean_status'] == 'Clean']
     elif clean_filter == 'Issues Only':
         filtered_patients = filtered_patients[filtered_patients['clean_status'] == 'Not Clean']
-    
+
     if risk_filter and len(risk_filter) > 0:
-        filtered_patients = filtered_patients[filtered_patients['risk_level'].isin(risk_filter)]
-    
+        filtered_patients = filtered_patients[filtered_patients['risk_level'].isin(
+            risk_filter)]
+
     if 'dqi_score' in filtered_patients.columns:
         filtered_patients = filtered_patients[
-            (filtered_patients['dqi_score'] >= dqi_range[0]) & 
+            (filtered_patients['dqi_score'] >= dqi_range[0]) &
             (filtered_patients['dqi_score'] <= dqi_range[1])
         ]
-    
+
     # Calculate metrics
     summary = DataHelper.calculate_summary_statistics(filtered_patients)
-    
-    # Header
-    st.markdown(f'<div class="main-header">🏥 Clinical Intelligence Platform</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="sub-header">Real-time monitoring and analytics for clinical trials • Role: {user.get("role", "User")}</div>', unsafe_allow_html=True)
-    
-    # Key Metrics Cards (4-column layout)
+
+    # Key Metrics Cards - RESPONSIVE
     st.markdown("### 📊 Key Performance Indicators")
     
-    col1, col2, col3, col4 = st.columns(4)
+    # Check if mobile
+    mobile = is_mobile()
     
-    with col1:
-        # Total Patients Card
-        total_patients = summary['total_patients']
-        active_patients = len(filtered_patients[filtered_patients['subject_status'] == 'Active']) if 'subject_status' in filtered_patients.columns else 0
-        delta = f"+{int(total_patients * 0.1)}" if total_patients > 0 else "0"
-        st.markdown(create_metric_card(
-            "Total Patients", 
-            f"{total_patients:,}",
-            delta=delta,
-            status="info"
-        ), unsafe_allow_html=True)
-        st.caption(f"📈 {active_patients} active patients")
+    # Adjust number of columns based on device
+    num_metric_cols = 2 if mobile else 4
+    metric_cols = st.columns(num_metric_cols)
     
-    with col2:
-        # Clean Patients Card
-        clean_pct = summary['clean_percentage']
-        clean_count = summary['clean_patients']
-        status = "good" if clean_pct >= 70 else ("warning" if clean_pct >= 50 else "critical")
-        st.markdown(create_metric_card(
-            "Clean Patients",
-            f"{clean_pct}%",
-            status=status,
-            progress=clean_pct
-        ), unsafe_allow_html=True)
-        st.caption(f"🎯 Target: 70% • Current: {clean_count} patients")
+    # If mobile, show metrics in 2 columns with different arrangement
+    if mobile:
+        # Column 1 on mobile
+        with metric_cols[0]:
+            # Total Patients Card
+            total_patients = summary['total_patients']
+            active_patients = len(filtered_patients[filtered_patients['subject_status']
+                              == 'Active']) if 'subject_status' in filtered_patients.columns else 0
+            delta = f"+{int(total_patients * 0.1)}" if total_patients > 0 else "0"
+            st.markdown(create_metric_card(
+                "Total Patients",
+                f"{total_patients:,}",
+                delta=delta,
+                status="primary",
+                icon="👥"
+            ), unsafe_allow_html=True)
+            st.caption(f"📈 {active_patients} active")
+        
+        # Column 2 on mobile  
+        with metric_cols[1]:
+            # Clean Patients Card
+            clean_pct = summary['clean_percentage']
+            clean_count = summary['clean_patients']
+            status = "good" if clean_pct >= 70 else (
+                "warning" if clean_pct >= 50 else "critical")
+            st.markdown(create_metric_card(
+                "Clean Patients",
+                f"{clean_pct}%",
+                status=status,
+                progress=clean_pct,
+                icon="✅"
+            ), unsafe_allow_html=True)
+            st.caption(f"🎯 Target: 70%")
     
-    with col3:
-        # Average DQI Card
-        avg_dqi = summary['avg_dqi']
-        dqi_status = "good" if avg_dqi >= 75 else ("warning" if avg_dqi >= 60 else "critical")
-        trend = "▲ 2.5" if avg_dqi > 70 else ("▼ 1.2" if avg_dqi < 60 else "━")
-        st.markdown(create_metric_card(
-            "Average DQI",
-            f"{avg_dqi:.1f}",
-            delta=trend,
-            status=dqi_status
-        ), unsafe_allow_html=True)
-        st.caption(f"📊 Score range: 0-100 • Threshold: 75")
-    
-    with col4:
-        # Open Issues Card
-        total_issues = summary['total_open_queries'] + summary['total_safety_issues']
-        safety_issues = summary['total_safety_issues']
-        status = "critical" if safety_issues > 0 else ("warning" if total_issues > 20 else "good")
-        st.markdown(create_metric_card(
-            "Open Issues",
-            f"{total_issues:,}",
-            status=status
-        ), unsafe_allow_html=True)
-        st.caption(f"🔴 {safety_issues} safety • 🟡 {summary['total_open_queries']} queries")
-    
+    else:  # Desktop - show all 4 metrics
+        with metric_cols[0]:
+            # Total Patients Card
+            total_patients = summary['total_patients']
+            active_patients = len(filtered_patients[filtered_patients['subject_status']
+                              == 'Active']) if 'subject_status' in filtered_patients.columns else 0
+            delta = f"+{int(total_patients * 0.1)}" if total_patients > 0 else "0"
+            st.markdown(create_metric_card(
+                "Total Patients",
+                f"{total_patients:,}",
+                delta=delta,
+                status="primary",
+                icon="👥"
+            ), unsafe_allow_html=True)
+            st.caption(f"📈 {active_patients} active patients")
+        
+        with metric_cols[1]:
+            # Clean Patients Card
+            clean_pct = summary['clean_percentage']
+            clean_count = summary['clean_patients']
+            status = "good" if clean_pct >= 70 else (
+                "warning" if clean_pct >= 50 else "critical")
+            st.markdown(create_metric_card(
+                "Clean Patients",
+                f"{clean_pct}%",
+                status=status,
+                progress=clean_pct,
+                icon="✅"
+            ), unsafe_allow_html=True)
+            st.caption(f"🎯 Target: 70% • Current: {clean_count} patients")
+        
+        with metric_cols[2]:
+            # Average DQI Card
+            avg_dqi = summary['avg_dqi']
+            dqi_status = "good" if avg_dqi >= 75 else (
+                "warning" if avg_dqi >= 60 else "critical")
+            trend = "▲ 2.5" if avg_dqi > 70 else ("▼ 1.2" if avg_dqi < 60 else "━")
+            st.markdown(create_metric_card(
+                "Average DQI",
+                f"{avg_dqi:.1f}",
+                delta=trend,
+                status=dqi_status,
+                icon="📊"
+            ), unsafe_allow_html=True)
+            st.caption(f"Score range: 0-100 • Threshold: 75")
+        
+        with metric_cols[3]:
+            # Open Issues Card
+            total_issues = summary['total_open_queries'] + \
+                summary['total_safety_issues']
+            safety_issues = summary['total_safety_issues']
+            status = "critical" if safety_issues > 0 else (
+                "warning" if total_issues > 20 else "good")
+            st.markdown(create_metric_card(
+                "Open Issues",
+                f"{total_issues:,}",
+                status=status,
+                icon="🚨"
+            ), unsafe_allow_html=True)
+            st.caption(
+                f"🔴 {safety_issues} safety • 🟡 {summary['total_open_queries']} queries")
+
     st.markdown("---")
+
+    # Main Tabs - adjust based on device
+    mobile = is_mobile()
     
-    # Main Tabs
-    tab1, tab2, tab3, tab4, tab5,tab6 = st.tabs([
-        "📈 Performance Dashboard", 
-        "👥 Patient Management",
-        "🏥 Site Analytics",
-        "🚨 Risk Monitoring",
-        "🤖 AI Insights",
-        "📊 Summary"  # ← NEW TAB
-    ])
-        
-    # TAB 6: Data Summary
-    with tab6:
-        st.header("📊 Complete Data Summary")
-        
-        # Overall statistics
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Total Patients", len(filtered_patients))
-            st.caption(f"Active: {len(filtered_patients[filtered_patients['subject_status'] == 'Active'])}")
-        
-        with col2:
-            clean_pct = (len(filtered_patients[filtered_patients['clean_status'] == 'Clean']) / len(filtered_patients)) * 100
-            st.metric("Clean Patients", f"{clean_pct:.1f}%")
-            st.caption(f"{len(filtered_patients[filtered_patients['clean_status'] == 'Clean'])} clean")
-        
-        with col3:
-            avg_dqi = filtered_patients['dqi_score'].mean() if 'dqi_score' in filtered_patients.columns else 0
-            st.metric("Avg DQI", f"{avg_dqi:.1f}")
-            st.caption(f"Range: {filtered_patients['dqi_score'].min():.1f}-{filtered_patients['dqi_score'].max():.1f}")
-        
-        with col4:
-            total_issues = filtered_patients['open_queries'].sum() if 'open_queries' in filtered_patients.columns else 0
-            st.metric("Total Issues", total_issues)
-            st.caption(f"Queries: {filtered_patients['open_queries'].sum()}")
-        
-        st.markdown("---")
-        
-        # Detailed metrics
-        st.subheader("📈 Detailed Metrics")
-        
-        metrics_col1, metrics_col2 = st.columns(2)
-        
-        with metrics_col1:
-            # Visit metrics
-            st.markdown("#### Visit Completion")
-            avg_visits = filtered_patients['visits_completed'].mean() if 'visits_completed' in filtered_patients.columns else 0
-            total_expected = filtered_patients['total_visits_expected'].sum() if 'total_visits_expected' in filtered_patients.columns else 0
-            total_completed = filtered_patients['visits_completed'].sum() if 'visits_completed' in filtered_patients.columns else 0
-            visit_completion = (total_completed / total_expected * 100) if total_expected > 0 else 0
+    if mobile:
+        # For mobile, use shorter tab names
+        tab_labels = ["📈 Perf", "👥 Patients", "🏥 Sites", "🚨 Risk", "🤖 AI", "🧬 Disease"]
+        tab1, tab2, tab3, tab4, tab5= st.tabs(tab_labels)
+    else:
+        # For desktop, use full names
+        tab_labels = [
+            "📈 Performance Dashboard",
+            "👥 Patient Management",
+            "🏥 Site Analytics",
+            "🚨 Risk Monitoring",
+            "🤖 AI Insights",
             
-            st.write(f"**Average visits per patient:** {avg_visits:.1f}")
-            st.write(f"**Total visits completed:** {total_completed:,}")
-            st.write(f"**Visit completion rate:** {visit_completion:.1f}%")
-            
-            # Page metrics
-            st.markdown("#### Page Completion")
-            avg_pages = filtered_patients['pages_completed'].mean() if 'pages_completed' in filtered_patients.columns else 0
-            st.write(f"**Average pages per patient:** {avg_pages:.1f}")
-        
-        with metrics_col2:
-            # Query metrics
-            st.markdown("#### Query Analysis")
-            total_queries = filtered_patients['total_queries'].sum() if 'total_queries' in filtered_patients.columns else 0
-            open_queries = filtered_patients['open_queries'].sum() if 'open_queries' in filtered_patients.columns else 0
-            resolved_queries = filtered_patients['queries_resolved'].sum() if 'queries_resolved' in filtered_patients.columns else 0
-            resolution_rate = (resolved_queries / total_queries * 100) if total_queries > 0 else 0
-            
-            st.write(f"**Total queries:** {total_queries:,}")
-            st.write(f"**Open queries:** {open_queries:,}")
-            st.write(f"**Resolved queries:** {resolved_queries:,}")
-            st.write(f"**Resolution rate:** {resolution_rate:.1f}%")
-            
-            # Safety metrics
-            st.markdown("#### Safety Metrics")
-            safety_issues = filtered_patients['safety_issues'].sum() if 'safety_issues' in filtered_patients.columns else 0
-            adverse_events = filtered_patients['adverse_events'].sum() if 'adverse_events' in filtered_patients.columns else 0
-            st.write(f"**Safety issues:** {safety_issues}")
-            st.write(f"**Adverse events:** {adverse_events}")
-        
-        st.markdown("---")
-        
-        # Data quality summary
-        st.subheader("🎯 Data Quality Summary")
-        
-        quality_metrics = [
-            ("Forms Verified", 'forms_verified', True),
-            ("Forms Signed", 'forms_signed', True),
-            ("SDV Completed", 'sdv_completed', True),
-            ("No Lab Issues", 'lab_issues', 0),
-            ("No Protocol Deviations", 'protocol_deviations', 0)
         ]
-        
-        for metric_name, column, target_value in quality_metrics:
-            if column in filtered_patients.columns:
-                if isinstance(target_value, bool):
-                    count = filtered_patients[column].sum()
-                else:
-                    count = len(filtered_patients[filtered_patients[column] == target_value])
-                
-                percentage = (count / len(filtered_patients)) * 100
-                progress_color = "🟢" if percentage >= 80 else ("🟡" if percentage >= 60 else "🔴")
-                
-                st.write(f"{progress_color} **{metric_name}:** {percentage:.1f}% ({count}/{len(filtered_patients)})")
-    # TAB 1: Performance Dashboard
+        tab1, tab2, tab3, tab4, tab5= st.tabs(tab_labels)
+    
+    # ... rest of your tabs code continues ...
+
+        # TAB 1: Performance Dashboard
     with tab1:
         st.header("Performance Analytics")
         
-        # Create visualizations
-        fig1, fig2, fig3 = create_visualizations(filtered_patients, sites)
+        # Show filter status clearly
+        if len(filtered_patients) != len(patients):
+            st.success(f"✅ Filters active: Showing {len(filtered_patients)} of {len(patients)} patients")
         
+        # Create visualizations (using FILTERED data for charts)
+        fig1, fig2, fig3 = create_visualizations(filtered_patients, sites)
+
         # Row 1: Charts
         col1, col2 = st.columns([3, 2])
-        
+
         with col1:
             st.plotly_chart(fig1, use_container_width=True)
-        
+
         with col2:
             st.plotly_chart(fig2, use_container_width=True)
-        
+
         # Row 2: Heatmap
         st.plotly_chart(fig3, use_container_width=True)
-        
-        # Row 3: Quick stats
-        st.subheader("📋 Quick Statistics")
+
+        # Row 3: Quick stats (using FILTERED data)
+        st.subheader("📋 Quick Statistics (Filtered Data)")
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
-            avg_visits = filtered_patients['visits_completed'].mean() if 'visits_completed' in filtered_patients.columns else 0
+            avg_visits = filtered_patients['visits_completed'].mean(
+            ) if 'visits_completed' in filtered_patients.columns else 0
             st.metric("Avg Visits Completed", f"{avg_visits:.1f}")
-        
+
         with col2:
-            query_resolution = (filtered_patients['queries_resolved'].sum() / filtered_patients['total_queries'].sum() * 100) if 'total_queries' in filtered_patients.columns and filtered_patients['total_queries'].sum() > 0 else 0
+            query_resolution = (filtered_patients['queries_resolved'].sum() / filtered_patients['total_queries'].sum(
+            ) * 100) if 'total_queries' in filtered_patients.columns and filtered_patients['total_queries'].sum() > 0 else 0
             st.metric("Query Resolution", f"{query_resolution:.1f}%")
-        
+
         with col3:
-            forms_verified = (filtered_patients['forms_verified'].sum() / len(filtered_patients) * 100) if 'forms_verified' in filtered_patients.columns else 0
+            forms_verified = (filtered_patients['forms_verified'].sum(
+            ) / len(filtered_patients) * 100) if 'forms_verified' in filtered_patients.columns else 0
             st.metric("Forms Verified", f"{forms_verified:.1f}%")
-        
+
         with col4:
-            protocol_deviations = filtered_patients['protocol_deviations'].sum() if 'protocol_deviations' in filtered_patients.columns else 0
+            protocol_deviations = filtered_patients['protocol_deviations'].sum(
+            ) if 'protocol_deviations' in filtered_patients.columns else 0
             st.metric("Protocol Deviations", protocol_deviations)
-    
-    # TAB 2: Patient Management
-            # TAB 2: Patient Management
-    with tab2:
-        st.header("👥 Patient Management")
         
-        # Show data statistics
+        # ========== DATABASE OVERVIEW ==========
+        st.subheader("📋 Complete Database Overview")
+        
+        # Show TOTAL database counts
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Total Patients", len(filtered_patients))
+            st.metric("Total Patients", len(patients))
         with col2:
-            clean_count = len(filtered_patients[filtered_patients['clean_status'] == 'Clean'])
-            st.metric("Clean Patients", clean_count)
+            total_active = len(patients[patients['subject_status'] == 'Active']) if 'subject_status' in patients.columns else 0
+            st.metric("Active Patients", total_active)
         with col3:
-            avg_dqi = filtered_patients['dqi_score'].mean() if 'dqi_score' in filtered_patients.columns else 0
-            st.metric("Avg DQI", f"{avg_dqi:.1f}")
+            total_clean = len(patients[patients['clean_status'] == 'Clean']) if 'clean_status' in patients.columns else 0
+            st.metric("Clean Patients", total_clean)
         with col4:
-            total_queries = filtered_patients['open_queries'].sum() if 'open_queries' in filtered_patients.columns else 0
-            st.metric("Open Queries", total_queries)
+            total_high_risk = len(patients[patients['risk_level'] == 'High']) if 'risk_level' in patients.columns else 0
+            st.metric("High Risk Patients", total_high_risk)
         
-        st.markdown("---")
+        # Show ALL PATIENTS with pagination
+        st.subheader("👥 Complete Patient Database")
         
-        # Column selector
-        st.subheader("📋 Data Columns")
+        # Add search for ALL patients
+        search_all = st.text_input("🔍 Search all patients...", 
+                                 placeholder="Search in entire database",
+                                 key="search_all_patients")
         
-        # Define all possible columns
-        all_columns = [
-            # Basic Info
-            'patient_id', 'subject_id', 'site_id', 'region', 
-            'subject_status', 'enrollment_date', 'last_visit_date',
+        if search_all and len(search_all) > 0:
+            search_mask = patients.apply(
+                lambda row: search_all.lower() in str(row).lower(), axis=1
+            )
+            display_all_patients = patients[search_mask]
+        else:
+            display_all_patients = patients
+        
+        # Select columns to show - CHECK WHICH COLUMNS EXIST
+        # Common patient columns that should exist
+        available_columns = []
+        possible_columns = ['patient_id', 'site_id', 'subject_status', 
+                           'clean_status', 'dqi_score', 'risk_level', 
+                           'missing_visits', 'open_queries', 'visits_completed',
+                           'total_queries', 'safety_issues']
+        
+        # Check which columns actually exist in the data
+        for col in possible_columns:
+            if col in patients.columns:
+                available_columns.append(col)
+        
+        # If no columns found, use a basic set
+        if not available_columns:
+            available_columns = list(patients.columns[:5])  # First 5 columns
+        
+        # Show ALL patients with responsive container
+        st.markdown(f"**Total records:** {len(display_all_patients)} patients")
+        
+        # Add pagination for all patients
+        if len(display_all_patients) > 0:
+            # Rows per page selector
+            rows_per_page_all = st.selectbox("Rows per page:", 
+                                           [10, 25, 50, 100, 250, 500],
+                                           key="rows_per_page_all",
+                                           index=3)  # Default to 100
             
-            # Visit Metrics
-            'total_visits_expected', 'visits_completed', 'missing_visits',
-            'visit_compliance_percentage', 'total_pages_expected', 
-            'pages_completed', 'missing_pages', 'page_completion_percentage',
+            # Calculate pagination
+            total_pages_all = max(1, (len(display_all_patients) // rows_per_page_all) + 1)
+            page_all = st.number_input("Page:", 
+                                     min_value=1, 
+                                     max_value=total_pages_all,
+                                     value=1,
+                                     key="page_all")
             
-            # Query Metrics
-            'total_queries', 'open_queries', 'queries_resolved',
-            'query_resolution_percentage', 'query_age_days',
+            start_idx_all = (page_all - 1) * rows_per_page_all
+            end_idx_all = min(start_idx_all + rows_per_page_all, len(display_all_patients))
             
-            # Data Quality
-            'non_conformant_data', 'data_entry_errors', 'data_quality_percentage',
-            'lab_issues', 'coding_backlog',
+            # Display ALL patients table with error handling
+            try:
+                st.markdown("""
+                <div style="overflow-x: auto; margin: 0 -1rem; padding: 0 1rem;">
+                """, unsafe_allow_html=True)
+                
+                st.dataframe(
+                    display_all_patients.iloc[start_idx_all:end_idx_all][available_columns],
+                    use_container_width=True,
+                    height=400
+                )
+                
+                st.markdown("</div>", unsafe_allow_html=True)
+                
+                st.caption(f"Showing patients {start_idx_all + 1} to {end_idx_all} of {len(display_all_patients)}")
+                
+            except Exception as e:
+                st.error(f"Error displaying data: {e}")
+                # Show raw data as fallback
+                st.write("Showing raw data (first 100 rows):")
+                st.dataframe(display_all_patients.head(100))
             
-            # Safety
-            'safety_issues', 'adverse_events', 'serious_adverse_events',
-            'protocol_deviations',
+            # Download all data button
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("📥 Download All Patients (CSV)", key="download_all"):
+                    csv_all = display_all_patients.to_csv(index=False)
+                    st.download_button(
+                        label="Click to Download",
+                        data=csv_all,
+                        file_name="all_patients_database.csv",
+                        mime="text/csv",
+                        key="download_all_btn"
+                    )
             
-            # Verification
-            'forms_verified', 'forms_signed', 'sdv_completed', 'frozen_locked',
-            'overdue_crfs',
-            
-            # Calculated
-            'clean_status', 'dqi_score', 'risk_level'
-        ]
+            with col2:
+                if st.button("📊 Export All to Excel", key="export_all_excel"):
+                    display_all_patients.to_excel('all_patients_database.xlsx', index=False)
+                    st.success("✅ All patients exported to Excel!")
         
-        # Filter to only columns that exist
-        existing_columns = [col for col in all_columns if col in filtered_patients.columns]
-        
-        # Default selected columns
-        default_columns = [
-            'patient_id', 'site_id', 'subject_status', 'clean_status',
-            'dqi_score', 'risk_level', 'visits_completed', 'missing_visits',
-            'open_queries', 'safety_issues', 'forms_verified'
-        ]
-        
-        # Column selector
-        selected_columns = st.multiselect(
-            "Select columns to display",
-            options=existing_columns,
-            default=[col for col in default_columns if col in existing_columns],
-            help="Choose which columns to show in the table"
-        )
-        
-        # Search functionality
-        search_col1, search_col2 = st.columns([3, 1])
-        with search_col1:
+        # Show what percentage is filtered
+        if len(filtered_patients) != len(patients):
+            filter_percentage = (len(filtered_patients) / len(patients)) * 100
+            st.info(f"📊 **Current filtered view:** {len(filtered_patients)} patients ({filter_percentage:.1f}% of total database)")
+            
+    # TAB 2: Patient Management
+    with tab2:
+        st.header("Patient Management")
+
+        # Search and controls
+        col1, col2, col3 = st.columns([3, 2, 1])
+
+        with col1:
             search_query = st.text_input(
-                "🔍 Search patients...",
-                placeholder="Search by ID, site, status, or any field"
-            )
-        
-        with search_col2:
-            items_per_page = st.selectbox(
-                "Rows/page",
-                [10, 25, 50, 100, 250],
-                index=1
-            )
-        
+                "🔍 Search patients...", placeholder="Search by ID, site, or status")
+
+        with col2:
+            items_per_page = st.selectbox("Rows per page", [10, 25, 50, 100])
+
+        with col3:
+            if st.button("📋 Column Toggles"):
+                st.session_state['show_column_toggles'] = not st.session_state.get(
+                    'show_column_toggles', False)
+
         # Apply search
-        if search_query and len(search_query) > 1:
+        if search_query and len(search_query) > 0:
             search_mask = filtered_patients.apply(
                 lambda row: search_query.lower() in str(row).lower(), axis=1
             )
-            display_df = filtered_patients[search_mask]
+            display_patients = filtered_patients[search_mask]
         else:
-            display_df = filtered_patients
-        
-        # Show data count
-        st.info(f"📊 **Displaying {len(display_df)} of {len(filtered_patients)} patients**")
-        
-        if len(display_df) > 0:
-            # Sort options
-            col1, col2 = st.columns(2)
-            with col1:
-                sort_by = st.selectbox(
-                    "Sort by",
-                    options=selected_columns,
-                    index=selected_columns.index('dqi_score') if 'dqi_score' in selected_columns else 0
-                )
-            
-            with col2:
-                sort_order = st.radio(
-                    "Sort order",
-                    ["Descending ⬇️", "Ascending ⬆️"],
-                    horizontal=True
-                )
-            
-            # Sort data
-            sorted_df = display_df.sort_values(
+            display_patients = filtered_patients
+
+        # Column selection
+        if st.session_state.get('show_column_toggles', False):
+            st.subheader("Select Columns to Display")
+            all_columns = display_patients.columns.tolist()
+            default_columns = ['patient_id', 'site_id', 'subject_status',
+                               'clean_status', 'dqi_score', 'risk_level']
+            selected_columns = st.multiselect(
+                "Choose columns",
+                options=all_columns,
+                default=default_columns
+            )
+        else:
+            selected_columns = ['patient_id', 'site_id', 'subject_status',
+                                'clean_status', 'dqi_score', 'risk_level', 'missing_visits', 'open_queries']
+
+        # Display data table
+        if len(display_patients) > 0:
+            display_cols = [
+                col for col in selected_columns if col in display_patients.columns]
+
+            # Sort options - THIS MUST COME BEFORE USING sorted_df
+            sort_by = st.selectbox("Sort by", options=display_cols, index=display_cols.index(
+                'dqi_score') if 'dqi_score' in display_cols else 0)
+            sort_order = st.radio(
+                "Order", ["Descending", "Ascending"], horizontal=True)
+
+            sorted_df = display_patients.sort_values(
                 sort_by,
-                ascending=(sort_order == "Ascending ⬆️")
+                ascending=(sort_order == "Ascending")
             )
-            
+
             # Pagination
-            total_pages = max(1, (len(sorted_df) + items_per_page - 1) // items_per_page)
-            page_number = st.number_input(
-                f"Page (1-{total_pages})",
-                min_value=1,
-                max_value=total_pages,
-                value=1
-            )
+            total_rows = len(sorted_df)
+            page_number = st.number_input("Page", min_value=1, value=1, max_value=max(
+                1, (total_rows // items_per_page) + 1))
             
             start_idx = (page_number - 1) * items_per_page
-            end_idx = min(start_idx + items_per_page, len(sorted_df))
+            end_idx = min(start_idx + items_per_page, total_rows)
+
+            # Display table with responsive container - ONLY ONCE
+            st.markdown("""
+            <div style="overflow-x: auto; margin: 0 -1rem; padding: 0 1rem;">
+            """, unsafe_allow_html=True)
             
-            # Display table
             st.dataframe(
-                sorted_df.iloc[start_idx:end_idx][selected_columns],
-                use_container_width=True,
-                height=450
+                sorted_df.iloc[start_idx:end_idx][display_cols],
+                width='stretch',
+                height=400
             )
             
-            # Pagination info
-            st.caption(f"📄 Showing patients {start_idx + 1} to {end_idx} of {len(sorted_df)}")
-            
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.caption(
+                f"Showing rows {start_idx + 1} to {end_idx} of {total_rows}")
+
             # Export options
-            st.markdown("---")
-            st.subheader("📥 Export Options")
-            
-            col1, col2, col3 = st.columns(3)
-            
+            col1, col2 = st.columns(2)
             with col1:
-                if st.button("💾 Export to CSV", use_container_width=True):
-                    sorted_df[selected_columns].to_csv('patient_export.csv', index=False)
-                    st.success("✅ Exported to patient_export.csv")
-            
-            with col2:
                 if st.button("📊 Export to Excel", use_container_width=True):
-                    sorted_df[selected_columns].to_excel('patient_export.xlsx', index=False)
-                    st.success("✅ Exported to patient_export.xlsx")
-            
-            with col3:
-                if st.button("📋 Copy to Clipboard", use_container_width=True):
-                    st.info("Use Ctrl+C to copy from table above")
-        
-        else:
-            st.warning("No patients match the current filters")
-    
+                    sorted_df[display_cols].to_excel(
+                        'patient_data.xlsx', index=False)
+                    st.success("✅ Exported to patient_data.xlsx")
+                    
+            with col2:
+                csv = sorted_df[display_cols].to_csv(index=False)
+                st.download_button(
+                    label="📥 Download CSV",
+                    data=csv,
+                    file_name="patient_data.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+                
     # TAB 3: Site Analytics
-        # TAB 3: Site Analytics
     with tab3:
         st.header("Site Performance Analytics")
-        
+
         if not sites.empty and len(sites) > 0:
             # Site comparison grid
             st.subheader("Site Comparison")
-            
-            # Create site metrics grid - SAFE VERSION
+
             available_cols = []
-            for col in ['site_id', 'region', 'total_patients_enrolled', 
-                       'clean_percentage', 'avg_dqi', 'total_open_queries',
-                       'performance_status']:
+            for col in ['site_id', 'region', 'total_patients_enrolled',
+                        'clean_percentage', 'avg_dqi', 'total_open_queries',
+                        'performance_status']:
                 if col in sites.columns:
                     available_cols.append(col)
-            
+
             if available_cols:
                 metrics_grid = sites[available_cols].copy()
-                
-                # Format for display - SAFE
+
                 if 'clean_percentage' in metrics_grid.columns:
                     metrics_grid['clean_percentage'] = metrics_grid['clean_percentage'].apply(
                         lambda x: f"{x:.1f}%" if pd.notna(x) else "N/A"
                     )
-                
+
                 if 'avg_dqi' in metrics_grid.columns:
                     metrics_grid['avg_dqi'] = metrics_grid['avg_dqi'].apply(
                         lambda x: f"{x:.1f}" if pd.notna(x) else "N/A"
                     )
-                
-                # Display with styling if performance_status exists
-                if 'performance_status' in metrics_grid.columns:
-                    st.dataframe(
-                        metrics_grid.style.apply(
-                            lambda x: ['background-color: #d4edda' if x['performance_status'] == 'Good' 
-                                      else ('background-color: #fff3cd' if x['performance_status'] == 'Warning' 
-                                            else 'background-color: #f8d7da') for _ in x],
-                            axis=1
-                        ),
-                        use_container_width=True,
-                        height=300
-                    )
-                else:
-                    st.dataframe(metrics_grid, use_container_width=True, height=300)
-            else:
-                st.info("No site metrics columns available")
-            
+
+                st.dataframe(
+                    metrics_grid, use_container_width=True, height=300)
+
             # Site drill-down
             st.subheader("Site Drill-down Analysis")
-            
+
             if 'site_id' in sites.columns:
                 site_options = sorted(sites['site_id'].unique())
                 selected_site = st.selectbox(
                     "Select site for detailed analysis",
                     options=site_options
                 )
-                
+
                 if selected_site:
                     site_info = sites[sites['site_id'] == selected_site]
                     if not site_info.empty:
                         site_row = site_info.iloc[0]
-                        site_patients = filtered_patients[filtered_patients['site_id'] == selected_site]
-                        
-                        # Site details in columns - USE SAFE GET
+                        site_patients = filtered_patients[filtered_patients['site_id']
+                                                          == selected_site]
+
+                        # Site details in columns
                         col1, col2, col3 = st.columns(3)
-                        
+
                         with col1:
-                            st.metric("Total Patients", site_row.get('total_patients_enrolled', 0))
-                            st.metric("Active Patients", len(site_patients[site_patients['subject_status'] == 'Active']) if 'subject_status' in site_patients.columns else 0)
-                        
+                            st.metric("Total Patients", site_row.get(
+                                'total_patients_enrolled', 0))
+                            st.metric("Active Patients", len(
+                                site_patients[site_patients['subject_status'] == 'Active']) if 'subject_status' in site_patients.columns else 0)
+
                         with col2:
-                            st.metric("Clean Percentage", f"{site_row.get('clean_percentage', 0):.1f}%")
-                            st.metric("Avg DQI", f"{site_row.get('avg_dqi', 0):.1f}")
-                        
+                            st.metric(
+                                "Clean Percentage", f"{site_row.get('clean_percentage', 0):.1f}%")
+                            st.metric(
+                                "Avg DQI", f"{site_row.get('avg_dqi', 0):.1f}")
+
                         with col3:
-                            st.metric("Open Issues", site_row.get('total_open_queries', 0))
-                            st.metric("Safety Issues", site_row.get('total_safety_issues', 0))
-                        
-                        # Action recommendations
-                        st.subheader("💡 Action Recommendations")
-                        
-                        recommendations = []
-                        if site_row.get('clean_percentage', 0) < 70:
-                            recommendations.append("🔸 **Improve data quality** - Provide additional training to site staff")
-                        if site_row.get('total_open_queries', 0) > 15:
-                            recommendations.append("🔸 **Reduce query backlog** - Allocate resources for query resolution")
-                        if site_row.get('avg_dqi', 0) < 70:
-                            recommendations.append("🔸 **Enhance monitoring** - Schedule additional monitoring visits")
-                        
-                        if recommendations:
-                            for rec in recommendations:
-                                st.info(rec)
-                        else:
-                            st.success("✅ Site is performing within acceptable parameters")
-            else:
-                st.info("No site ID data available")
-        
-        else:
-            st.info("No site data available")
-    
+                            st.metric("Open Issues", site_row.get(
+                                'total_open_queries', 0))
+                            st.metric("Safety Issues", site_row.get(
+                                'total_safety_issues', 0))
+
     # TAB 4: Risk Monitoring
     with tab4:
         st.header("Risk Monitoring & Alerts")
-        
+
         # Risk Matrix
         st.subheader("📊 Risk Matrix")
-        
+
         if 'risk_level' in filtered_patients.columns and 'clean_status' in filtered_patients.columns:
-            risk_matrix = filtered_patients.groupby(['risk_level', 'clean_status']).size().unstack(fill_value=0)
-            
+            risk_matrix = filtered_patients.groupby(
+                ['risk_level', 'clean_status']).size().unstack(fill_value=0)
+
             fig_risk = go.Figure(data=go.Heatmap(
                 z=risk_matrix.values,
                 x=risk_matrix.columns,
@@ -1137,110 +1785,37 @@ def main_dashboard():
                 textfont={"size": 14},
                 hoverinfo='text'
             ))
-            
+
             fig_risk.update_layout(
                 height=300,
                 title="Risk Level vs Clean Status Matrix",
                 xaxis_title="Clean Status",
                 yaxis_title="Risk Level"
             )
-            
+
             st.plotly_chart(fig_risk, use_container_width=True)
-        
-        # High-priority issues
-        st.subheader("🚨 High-Priority Issues")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Safety issues
-            safety_patients = filtered_patients[filtered_patients['safety_issues'] > 0]
-            if not safety_patients.empty:
-                st.error(f"**Safety Alerts:** {len(safety_patients)} patients have safety issues")
-                for _, patient in safety_patients.head(3).iterrows():
-                    with st.expander(f"⚠️ {patient.get('patient_id', 'Unknown')} - {patient.get('site_id', 'Unknown')}"):
-                        st.write(f"**Patient ID:** {patient.get('patient_id', 'N/A')}")
-                        st.write(f"**Site:** {patient.get('site_id', 'N/A')}")
-                        st.write(f"**Safety Issues:** {patient.get('safety_issues', 0)}")
-                        st.write(f"**Adverse Events:** {patient.get('adverse_events', 0)}")
-                        st.write("**Action Required:** Immediate medical review")
-            else:
-                st.success("✅ No safety issues detected")
-        
-        with col2:
-            # High-risk patients
-            high_risk = filtered_patients[filtered_patients['risk_level'] == 'High']
-            if not high_risk.empty:
-                st.warning(f"**High-Risk Patients:** {len(high_risk)} patients require attention")
-                for _, patient in high_risk.head(3).iterrows():
-                    with st.expander(f"🔴 {patient.get('patient_id', 'Unknown')} - DQI: {patient.get('dqi_score', 0)}"):
-                        st.write(f"**DQI Score:** {patient.get('dqi_score', 0)}")
-                        st.write(f"**Clean Status:** {patient.get('clean_status', 'Unknown')}")
-                        st.write(f"**Missing Visits:** {patient.get('missing_visits', 0)}")
-                        st.write(f"**Open Queries:** {patient.get('open_queries', 0)}")
-                        st.write("**Action:** Schedule follow-up within 7 days")
-            else:
-                st.success("✅ No high-risk patients")
-        
-        # Open queries monitoring
-        st.subheader("❓ Query Monitoring Dashboard")
-        
-        if not queries.empty:
-            open_queries = queries[queries['query_status'] == 'Open']
-            
-            if not open_queries.empty:
-                # Query statistics
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.metric("Total Open", len(open_queries))
-                
-                with col2:
-                    avg_age = open_queries['query_age_days'].mean() if 'query_age_days' in open_queries.columns else 0
-                    st.metric("Avg Age (days)", f"{avg_age:.1f}")
-                
-                with col3:
-                    high_priority = len(open_queries[open_queries['query_priority'] == 'High']) if 'query_priority' in open_queries.columns else 0
-                    st.metric("High Priority", high_priority)
-                
-                # Query table
-                query_cols = []
-                for col in ['query_id', 'patient_id', 'site_id', 'query_type', 'query_priority', 'query_age_days']:
-                    if col in open_queries.columns:
-                        query_cols.append(col)
-                
-                if query_cols:
-                    st.dataframe(
-                        open_queries[query_cols].sort_values('query_age_days', ascending=False),
-                        use_container_width=True,
-                        height=200
-                    )
-            else:
-                st.success("✅ No open queries")
-        else:
-            st.info("No query data available")
-    
+
     # TAB 5: AI Insights
     with tab5:
         st.header("AI-Powered Insights & Reports")
-        
+
         # Predictive analytics
         st.subheader("📈 Predictive Analytics")
-        
+
         col1, col2 = st.columns(2)
-        
+
         with col1:
             # Enrollment prediction
             st.markdown("#### Enrollment Forecast")
             current = summary['total_patients']
-            target = TRIAL_INFO['target_patients']
+            target = DEFAULT_TRIAL['target_patients']
             progress = (current / target) * 100
-            
+
             fig_enroll = go.Figure(go.Indicator(
-                mode = "gauge+number",
-                value = progress,
-                title = {'text': "Enrollment Progress"},
-                gauge = {
+                mode="gauge+number",
+                value=progress,
+                title={'text': "Enrollment Progress"},
+                gauge={
                     'axis': {'range': [None, 100]},
                     'bar': {'color': "#1f3c88"},
                     'steps': [
@@ -1255,217 +1830,11 @@ def main_dashboard():
                     }
                 }
             ))
-            
+
             fig_enroll.update_layout(height=250)
             st.plotly_chart(fig_enroll, use_container_width=True)
-            
-            # Prediction
-            days_remaining = (datetime.strptime(TRIAL_INFO['expected_end_date'], '%Y-%m-%d') - datetime.now()).days
-            if days_remaining > 0:
-                daily_rate = current / (365 - days_remaining) if (365 - days_remaining) > 0 else 0
-                predicted = current + (daily_rate * days_remaining)
-                st.info(f"📅 **Predicted enrollment:** {int(predicted)}/{target} ({(predicted/target*100):.1f}%)")
-        
-        with col2:
-            # DQI trend prediction
-            st.markdown("#### DQI Trend Prediction")
-            
-            # Simulated trend data
-            dates = pd.date_range(end=datetime.now(), periods=30, freq='D')
-            dqi_trend = np.random.normal(summary['avg_dqi'], 5, 30).clip(0, 100)
-            
-            fig_trend = go.Figure()
-            fig_trend.add_trace(go.Scatter(
-                x=dates,
-                y=dqi_trend,
-                mode='lines+markers',
-                name='Historical',
-                line=dict(color='#1f3c88', width=2)
-            ))
-            
-            # Add prediction
-            future_dates = pd.date_range(start=datetime.now(), periods=7, freq='D')
-            future_trend = np.linspace(dqi_trend[-1], min(dqi_trend[-1] + 2, 100), 7)
-            
-            fig_trend.add_trace(go.Scatter(
-                x=future_dates,
-                y=future_trend,
-                mode='lines',
-                name='Prediction',
-                line=dict(color='#dc3545', width=2, dash='dash')
-            ))
-            
-            fig_trend.update_layout(
-                height=250,
-                xaxis_title="Date",
-                yaxis_title="DQI Score",
-                hovermode='x unified'
-            )
-            
-            st.plotly_chart(fig_trend, use_container_width=True)
-            st.caption("📊 AI prediction suggests slight improvement over next 7 days")
-        
-        # Report generation
-        st.subheader("📄 Report Generation")
-        
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            report_type = st.selectbox(
-                "Report Type",
-                options=["Site Performance Report", "Patient Status Summary", 
-                        "Data Quality Analysis", "Safety Monitoring Report", 
-                        "Executive Summary"]
-            )
-            
-            report_params = st.multiselect(
-                "Include Parameters",
-                options=["Patient Demographics", "Performance Metrics", "Issues & Alerts",
-                        "Trend Analysis", "Recommendations", "Financial Impact"],
-                default=["Performance Metrics", "Issues & Alerts", "Recommendations"]
-            )
-        
-        with col2:
-            format_type = st.radio(
-                "Export Format",
-                options=["PDF", "Excel", "HTML"],
-                horizontal=True
-            )
-            
-            schedule_report = st.checkbox("Schedule Report")
-            
-            if schedule_report:
-                frequency = st.selectbox(
-                    "Frequency",
-                    options=["Daily", "Weekly", "Monthly", "Quarterly"]
-                )
-        
-        # Generate report button
-        if st.button("🔄 Generate Report", type="primary", use_container_width=True):
-            with st.spinner("Generating AI-powered report..."):
-                # Simulate report generation
-                import time
-                time.sleep(2)
-                
-                # Create report content
-                report_content = f"""
-                # AI-Generated Clinical Trial Report
-                
-                ## Report Details
-                - **Type:** {report_type}
-                - **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-                - **Parameters:** {', '.join(report_params)}
-                - **Format:** {format_type}
-                
-                ## Executive Summary
-                - **Total Patients Analyzed:** {summary['total_patients']}
-                - **Overall Clean Rate:** {summary['clean_percentage']}%
-                - **Average DQI:** {summary['avg_dqi']:.1f}/100
-                - **Critical Issues:** {summary['total_safety_issues']} safety, {summary['total_open_queries']} queries
-                
-                ## Key Findings
-                1. Data quality is {'within acceptable limits' if summary['clean_percentage'] >= 70 else 'needs improvement'}
-                2. {'No critical safety issues detected' if summary['total_safety_issues'] == 0 else 'Safety issues require immediate attention'}
-                3. Query resolution rate: {((filtered_patients['queries_resolved'].sum() / filtered_patients['total_queries'].sum() * 100) if 'total_queries' in filtered_patients.columns and filtered_patients['total_queries'].sum() > 0 else 0):.1f}%
-                
-                ## AI Recommendations
-                - {'Maintain current monitoring frequency' if summary['clean_percentage'] >= 70 else 'Increase monitoring visits for low-performing sites'}
-                - {'Continue current processes' if summary['total_safety_issues'] == 0 else 'Schedule safety review meetings'}
-                - {'Query resolution process is effective' if summary['total_open_queries'] < 20 else 'Allocate additional resources for query resolution'}
-                
-                ## Next Steps
-                1. Review this report with clinical team
-                2. Implement recommended actions
-                3. Schedule follow-up review in 30 days
-                """
-                
-                # Display report
-                st.success("✅ Report generated successfully!")
-                
-                with st.expander("📋 Preview Report", expanded=True):
-                    st.markdown(report_content)
-                
-                # Download options
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button(f"📥 Download {format_type} Report"):
-                        st.info(f"Downloading {format_type} report...")
-                        # In real implementation, generate actual file
-                
-                with col2:
-                    if st.button("📧 Email Report"):
-                        st.info("Report emailed to distribution list")
-        
-        # Anomaly detection
-        st.subheader("🔍 Anomaly Detection")
-        
-        if 'dqi_score' in filtered_patients.columns:
-            # Calculate anomalies (z-score > 2)
-            mean_dqi = filtered_patients['dqi_score'].mean()
-            std_dqi = filtered_patients['dqi_score'].std()
-            
-            if std_dqi > 0:
-                filtered_patients['z_score'] = (filtered_patients['dqi_score'] - mean_dqi) / std_dqi
-                anomalies = filtered_patients[abs(filtered_patients['z_score']) > 2]
-                
-                if not anomalies.empty:
-                    st.warning(f"⚠️ **Anomalies Detected:** {len(anomalies)} patients with unusual DQI scores")
-                    
-                    for _, anomaly in anomalies.head(3).iterrows():
-                        with st.expander(f"📊 {anomaly.get('patient_id', 'Unknown')} - DQI: {anomaly.get('dqi_score', 0)} (z-score: {anomaly.get('z_score', 0):.2f})"):
-                            st.write(f"**Site:** {anomaly.get('site_id', 'N/A')}")
-                            st.write(f"**Status:** {anomaly.get('subject_status', 'N/A')}")
-                            st.write(f"**Clean Status:** {anomaly.get('clean_status', 'N/A')}")
-                            st.write(f"**Risk Level:** {anomaly.get('risk_level', 'N/A')}")
-                            st.write("**AI Insight:** This patient's DQI score significantly deviates from the average")
-                else:
-                    st.success("✅ No statistical anomalies detected")
-        
-        # Recommendation cards
-        st.subheader("💡 AI Recommendations")
-        
-        insights = DataHelper.generate_ai_insights(filtered_patients, sites)
-        
-        if insights:
-            for insight in insights:
-                if insight['type'] == 'critical':
-                    st.error(f"### 🔴 {insight['title']}")
-                elif insight['type'] == 'warning':
-                    st.warning(f"### 🟡 {insight['title']}")
-                else:
-                    st.success(f"### 🟢 {insight['title']}")
-                
-                st.write(insight['message'])
-                st.info(f"**🤖 AI Recommendation:** {insight['recommendation']}")
-        else:
-            st.success("✅ All systems operating within optimal parameters")
-            
-            # Show positive insights
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.info("""
-                **📊 Data Quality**
-                Current data quality metrics are within acceptable ranges.
-                Continue current quality control processes.
-                """)
-            
-            with col2:
-                st.info("""
-                **🏥 Site Performance**
-                All sites are meeting minimum performance standards.
-                Consider sharing best practices between sites.
-                """)
-            
-            with col3:
-                st.info("""
-                **🚨 Risk Management**
-                No critical risks detected.
-                Maintain current monitoring frequency.
-                """)
-    
+
     # Footer
-            # Footer
     st.markdown("---")
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
     st.markdown(f"""
@@ -1478,5 +1847,7 @@ def main_dashboard():
         Last updated: {current_time}
     </div>
     """, unsafe_allow_html=True)
+
+
 if __name__ == "__main__":
     main_dashboard()
