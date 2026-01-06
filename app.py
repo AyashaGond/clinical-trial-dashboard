@@ -13,11 +13,27 @@ import time
 import plotly.graph_objects as go
 import plotly.express as px
 
+import streamlit as st
 
-# Enhanced Custom CSS for pharmaceutical look
+# THIS MUST BE THE FIRST STREAMLIT COMMAND
+st.set_page_config(
+    page_title="Clinical Intelligence Platform",
+    page_icon="🏥",
+    layout="wide",  # <-- THIS IS CRITICAL
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://www.novartis.com',
+        'Report a bug': None,
+        'About': "Clinical Trial Intelligence Dashboard v1.0"
+    }
+)
+
+
 st.markdown("""
 <style>
-    /* Main container styling */
+    /* ========== FIXED & CLEANED CSS ========== */
+    
+    /* Main container styling - REMOVE DUPLICATES */
     .main-header {
         font-size: 28px;
         color: #1f3c88;
@@ -50,7 +66,7 @@ st.markdown("""
         box-shadow: 0 6px 25px rgba(0,0,0,0.12);
     }
     
-    /* Metrics cards with gradient backgrounds */
+    /* Metrics cards */
     .metric-card-pharma {
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
         padding: 25px;
@@ -78,26 +94,6 @@ st.markdown("""
         align-items: center;
         gap: 8px;
     }
-    
-    .metric-trend-pharma {
-        font-size: 12px;
-        padding: 4px 12px;
-        border-radius: 12px;
-        display: inline-block;
-        margin-top: 5px;
-        font-weight: 600;
-    }
-    
-    .trend-up-pharma { background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); color: #155724; border: 1px solid #b1dfbb; }
-    .trend-down-pharma { background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); color: #721c24; border: 1px solid #f1b0b7; }
-    .trend-neutral-pharma { background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%); color: #383d41; border: 1px solid #c8cbcf; }
-    
-    /* Status indicators with pharma colors */
-    .status-good { border-left-color: #28a745; }
-    .status-warning { border-left-color: #ffc107; }
-    .status-critical { border-left-color: #dc3545; }
-    .status-info { border-left-color: #17a2b8; }
-    .status-primary { border-left-color: #1f3c88; }
     
     /* Progress bars */
     .progress-container-pharma {
@@ -148,74 +144,7 @@ st.markdown("""
         border-color: #1f3c88;
     }
     
-    /* Responsive tabs */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 2px;
-    flex-wrap: wrap;
-}
-
-@media (max-width: 768px) {
-    .stTabs [data-baseweb="tab"] {
-        flex: 1 0 calc(33.333% - 4px) !important;
-        font-size: 12px !important;
-        height: 45px !important;
-        padding: 0 8px !important;
-        margin-bottom: 4px;
-    }
-}
-
-@media (max-width: 480px) {
-    .stTabs [data-baseweb="tab"] {
-        flex: 1 0 calc(50% - 4px) !important;
-        font-size: 11px !important;
-        height: 40px !important;
-    }
-}
-    
-    /* Button styling */
-    .stButton button {
-        border-radius: 10px;
-        font-weight: 600;
-        padding: 8px 20px;
-        border: none;
-        transition: all 0.3s;
-    }
-    
-    .stButton button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    
-    /* Sidebar enhancements */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-        border-right: 1px solid #e2e8f0;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-    }
-    
-    .stSidebar h3 {
-        color: #1f3c88;
-        font-weight: 700;
-        margin-top: 20px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #e9ecef;
-        font-size: 18px;
-    }
-    
-    /* Widget styling */
-    .stSidebar .stSelectbox,
-    .stSidebar .stMultiselect,
-    .stSidebar .stSlider,
-    .stSidebar .stRadio,
-    .stSidebar .stDateInput {
-        background: white;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    /* Header styling */
+    /* Header styling - FIXED */
     .pharma-header {
         background: linear-gradient(135deg, #1f3c88 0%, #0d1b2a 100%) !important;
         padding: 25px 30px !important;
@@ -224,13 +153,64 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
         position: relative !important;
         overflow: visible !important;
+        width: 100% !important;
     }
-
-    * Make sure text is visible */
+    
     .pharma-header h1,
     .pharma-header span,
     .pharma-header div {
         color: white !important;
+    }
+    
+    /* Sidebar styling - FIXED */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border-right: 1px solid #e2e8f0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        width: 200px !important;
+        min-width: 200px !important;
+        max-width: 200px !important;
+    }
+    
+    /* Main content width adjustment - CRITICAL FIX */
+    .stApp {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+    
+    .main .block-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 1rem 2rem !important;
+        transition: margin-left 0.3s ease !important;
+    }
+    
+    /* When sidebar is EXPANDED - FIXED */
+    section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {
+        margin-left: 200px !important;
+        width: calc(100vw - 200px) !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+    
+    /* When sidebar is COLLAPSED - FIXED */
+    section[data-testid="stSidebar"][aria-expanded="false"] {
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+    }
+    
+    section[data-testid="stSidebar"][aria-expanded="false"] ~ .main .block-container {
+        margin-left: 0 !important;
+        width: 100vw !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+    
+    /* Hide sidebar content when collapsed */
+    section[data-testid="stSidebar"][aria-expanded="false"] > div {
+        display: none !important;
     }
     
     /* Remove Streamlit defaults */
@@ -258,301 +238,78 @@ st.markdown("""
         background: #0d1b2a;
     }
     
-        /* Header styling matching screenshot */
-    .stButton button[kind="primary"] {
-        background: linear-gradient(135deg, #1f3c88 0%, #0d1b2a 100%);
-        border: 1px solid rgba(255,255,255,0.3);
-        color: white;
-        font-weight: 600;
-        font-size: 13px;
-    }
-
-    .stButton button[kind="secondary"] {
-        background: rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-        color: white;
-        font-weight: 500;
-        font-size: 13px;
-    }
-
-    .stButton button[kind="secondary"]:hover {
-        background: rgba(255,255,255,0.2);
-        border-color: rgba(255,255,255,0.3);
-    }
-
-    /* Icon button styling */
-    .stButton button {
-        min-width: 40px;
-        height: 40px;
-        border-radius: 20px;
-        padding: 0;
-    }
-
-    /* Make sure header text is visible */
-    [data-testid="stHeader"] {
-        background-color: #1f3c88;
-    }
-
-    /* Adjust main container padding */
-    .main .block-container {
-        padding-top: 1rem;
-    }
-    
-    /* Badge styling */
-    .badge {
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-    
-    .badge-success {
-        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-        color: white;
-    }
-    
-    .badge-warning {
-        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-        color: #212529;
-    }
-    
-    .badge-danger {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-    }
-    
-    .badge-info {
-        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        color: white;
-    }
-    
-    .badge-primary {
-        background: linear-gradient(135deg, #1f3c88 0%, #0d1b2a 100%);
-        color: white;
-    }
-    
-    /* Filter chips */
-    .filter-chip {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 500;
-        margin: 3px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-    
-    .filter-chip:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    }
-    
-    /* Data table styling */
-    .stDataFrame {
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #dee2e6;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-    }
-    
-    /* Metric grid layout */
-    .metric-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    
-    @media (max-width: 1200px) {
-        .metric-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
+    /* Responsive tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2px;
+        flex-wrap: wrap;
     }
     
     @media (max-width: 768px) {
-        .metric-grid {
-            grid-template-columns: 1fr;
+        .stTabs [data-baseweb="tab"] {
+            flex: 1 0 calc(33.333% - 4px) !important;
+            font-size: 12px !important;
+            height: 45px !important;
+            padding: 0 8px !important;
+            margin-bottom: 4px;
+        }
+        
+        /* Mobile sidebar */
+        section[data-testid="stSidebar"] {
+            width: 280px !important;
+            min-width: 280px !important;
+            max-width: 280px !important;
+        }
+        
+        section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {
+            margin-left: 280px !important;
+            width: calc(100vw - 280px) !important;
         }
     }
     
-/* User profile styling in sidebar */
-.stButton button {
-    justify-content: flex-start;
-    text-align: left;
-    padding-left: 15px;
-}
-
-.stButton button[kind="secondary"] {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    color: #495057;
-}
-
-.stButton button[kind="secondary"]:hover {
-    background: #e9ecef;
-    border-color: #ced4da;
-}
-
-/* Make profile menu items look like proper menu items */
-div[data-testid="stExpander"] div[role="button"] {
-    padding: 10px 15px;
-    border-radius: 8px;
-    margin: 2px 0;
-}
-
-div[data-testid="stExpander"] div[role="button"]:hover {
-    background: #f8f9fa;
-}
-
-/* ========== RESPONSIVE DESIGN ========== */
-
-/* Base responsive settings */
-.main .block-container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-    max-width: 100% !important;
-}
-
-/* Responsive metric cards */
-@media (max-width: 1200px) {
-    .metric-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
+    @media (max-width: 480px) {
+        .stTabs [data-baseweb="tab"] {
+            flex: 1 0 calc(50% - 4px) !important;
+            font-size: 11px !important;
+            height: 40px !important;
+        }
+        
+        .pharma-header {
+            padding: 15px !important;
+        }
+        
+        .metric-card-pharma {
+            padding: 15px !important;
+        }
+        
+        .metric-value-pharma {
+            font-size: 28px !important;
+        }
     }
     
-    .stDataFrame {
-        font-size: 12px !important;
-    }
-}
-
-@media (max-width: 768px) {
-    .metric-grid {
-        grid-template-columns: 1fr !important;
+    /* Make images/charts responsive */
+    .stPlotlyChart, .stDataFrame, img {
+        max-width: 100% !important;
+        height: auto !important;
     }
     
-    /* Stack columns on mobile */
-    [data-testid="column"] {
-        width: 100% !important;
-        flex: 1 1 100% !important;
+    /* Responsive columns */
+    .stColumn {
+        min-width: 0 !important;
     }
     
-    /* Adjust header on mobile */
-    .pharma-header {
-        padding: 15px !important;
-        margin: -1rem -1rem 1rem -1rem !important;
+    /* Ensure content doesn't overflow */
+    * {
+        box-sizing: border-box !important;
     }
     
-    /* Make disease buttons wrap on mobile */
-    .disease-buttons-container {
-        flex-wrap: wrap !important;
-        gap: 5px !important;
-    }
-    
-    .disease-button {
-        flex: 1 0 calc(50% - 10px) !important;
-        min-width: 140px !important;
-    }
-    
-    /* Adjust sidebar width on mobile */
-    section[data-testid="stSidebar"] {
-        min-width: 100px !important;
-        max-width: 280px !important;
-    }
-    
-    /* Make tables scrollable on mobile */
-    .stDataFrame {
+    /* Responsive table */
+    div[data-testid="stDataFrameResizable"] {
         overflow-x: auto !important;
     }
-    
-    /* Adjust font sizes for mobile */
-    h1 {
-        font-size: 22px !important;
-    }
-    
-    h2 {
-        font-size: 18px !important;
-    }
-    
-    h3 {
-        font-size: 16px !important;
-    }
-    
-    .metric-value-pharma {
-        font-size: 28px !important;
-    }
-    
-    .metric-label-pharma {
-        font-size: 12px !important;
-    }
-}
-
-@media (max-width: 480px) {
-    /* Further adjustments for very small screens */
-    .pharma-header h1 {
-        font-size: 20px !important;
-    }
-    
-    .metric-card-pharma {
-        padding: 15px !important;
-    }
-    
-    /* Single column layout for everything */
-    .stTabs [data-baseweb="tab-list"] {
-        flex-wrap: wrap !important;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        flex: 1 0 calc(50% - 4px) !important;
-        font-size: 12px !important;
-        height: 40px !important;
-        padding: 0 10px !important;
-    }
-    
-    /* Adjust button sizes */
-    .stButton button {
-        padding: 6px 12px !important;
-        font-size: 13px !important;
-    }
-}
-
-/* Make images/charts responsive */
-.stPlotlyChart, .stDataFrame, img {
-    max-width: 100% !important;
-    height: auto !important;
-}
-
-/* Responsive columns */
-.stColumn {
-    min-width: 0 !important;
-}
-
-/* Hide non-essential elements on very small screens */
-@media (max-width: 360px) {
-    .stMetric delta {
-        display: none !important;
-    }
-    
-    .subtitle {
-        display: none !important;
-    }
-}
-
-/* Ensure content doesn't overflow */
-* {
-    box-sizing: border-box !important;
-}
-
-/* Responsive table */
-div[data-testid="stDataFrameResizable"] {
-    overflow-x: auto !important;
-}
-
 </style>
 """, unsafe_allow_html=True)
+
+
 
 def is_mobile():
     """Detect if user is on mobile device"""
@@ -638,7 +395,7 @@ def load_data(disease=None):
         'query_status': random.choices(['Open', 'Resolved'], weights=[40, 60], k=num_queries),
         'query_priority': random.choices(['Low', 'Medium', 'High'], 
                                          weights=[50, 30, 20], k=num_queries),
-        'created_date': pd.date_range(start='2023-06-01', periods=num_queries, freq='H'),
+        'created_date': pd.date_range(start='2023-06-01', periods=num_queries, freq='h'),
         'assigned_to': random.choices(['Dr. Smith', 'Dr. Johnson', 'Dr. Williams'], 
                                       k=num_queries)
     })
@@ -723,10 +480,10 @@ def create_pharma_header(user):
                     <h1 style="
                         color: #1f3c88;
                         margin: 0px 0px 1px 0px;
-                        font-size: 36px;
-                        font-weight: 800;
+                        font-size: 37px;
+                        font-weight: 900;
                         letter-spacing: .5px;
-                        line-height: 0.9;
+                        line-height: 0.8;
                     ">Clinical Intelligence Platform</h1>
                     <div style="
                         color: #666;
@@ -1013,7 +770,7 @@ def create_sidebar_filters(patients, user, current_disease=None):
                 key="format_type"
             )
 
-            if st.button("🔄 Generate Demo Report", type="secondary", use_container_width=True, key="generate_report"):
+            if st.button("🔄 Generate Demo Report", type="secondary", width='stretch', key="generate_report"):
                 with st.spinner(f"Creating {report_type} report..."):
                     time.sleep(2)
                     st.success(f"✅ {report_type} report generated!")
@@ -1086,39 +843,39 @@ def create_sidebar_filters(patients, user, current_disease=None):
             st.markdown("### 👤 User Menu")
 
             # Menu items as buttons
-            if st.button("👤 Your Profile", key="your_profile", use_container_width=True):
+            if st.button("👤 Your Profile", key="your_profile", width='stretch'):
                 st.session_state['show_profile_settings'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("⚙️ Settings", key="user_settings", use_container_width=True):
+            if st.button("⚙️ Settings", key="user_settings", width='stretch'):
                 st.session_state['show_account_settings'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("🔐 Security", key="user_security", use_container_width=True):
+            if st.button("🔐 Security", key="user_security", width='stretch'):
                 st.session_state['show_security_settings'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("📊 Preferences", key="user_preferences", use_container_width=True):
+            if st.button("📊 Preferences", key="user_preferences", width='stretch'):
                 st.session_state['show_preferences'] = True
                 st.session_state['show_profile_menu'] = False
 
             st.markdown("---")
 
-            if st.button("📖 Help & Support", key="user_help", use_container_width=True):
+            if st.button("📖 Help & Support", key="user_help", width='stretch'):
                 st.session_state['show_help'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("💬 Send Feedback", key="user_feedback", use_container_width=True):
+            if st.button("💬 Send Feedback", key="user_feedback", width='stretch'):
                 st.session_state['show_feedback'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("🔄 Switch Account", key="switch_account", use_container_width=True):
+            if st.button("🔄 Switch Account", key="switch_account", width='stretch'):
                 st.session_state['show_switch_account'] = True
                 st.session_state['show_profile_menu'] = False
 
             st.markdown("---")
 
-            if st.button("🚪 Logout", type="primary", key="sidebar_logout", use_container_width=True):
+            if st.button("🚪 Logout", type="primary", key="sidebar_logout", width='stretch'):
                 # Clear session state and rerun
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
@@ -1146,11 +903,11 @@ def create_sidebar_filters(patients, user, current_disease=None):
 
                 col1, col2 = st.columns(2)
                 with col1:
-                    if st.button("💾 Save Changes", key="save_profile", use_container_width=True):
+                    if st.button("💾 Save Changes", key="save_profile", width='stretch'):
                         st.success("Profile updated successfully!")
                         st.session_state['show_profile_settings'] = False
                 with col2:
-                    if st.button("✖️ Cancel", key="cancel_profile", use_container_width=True):
+                    if st.button("✖️ Cancel", key="cancel_profile", width='stretch'):
                         st.session_state['show_profile_settings'] = False
 
         if st.session_state.get('show_account_settings', False):
@@ -1169,7 +926,7 @@ def create_sidebar_filters(patients, user, current_disease=None):
                 date_format = st.selectbox(
                     "Date Format", ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"], key="date_format")
 
-                if st.button("💾 Save Preferences", key="save_account_settings", use_container_width=True):
+                if st.button("💾 Save Preferences", key="save_account_settings", width='stretch'):
                     st.success("Account settings saved!")
                     st.session_state['show_account_settings'] = False
 
@@ -1188,7 +945,7 @@ def create_sidebar_filters(patients, user, current_disease=None):
                 session_timeout = st.slider(
                     "Session Timeout (minutes)", 15, 240, 60, key="session_timeout")
 
-                if st.button("🔒 Update Security", key="update_security", use_container_width=True):
+                if st.button("🔒 Update Security", key="update_security", width='stretch'):
                     st.success("Security settings updated!")
                     st.session_state['show_security_settings'] = False
 
@@ -1215,7 +972,7 @@ def create_sidebar_filters(patients, user, current_disease=None):
                     auto_refresh = st.checkbox(
                         "Auto-refresh Data", value=False, key="auto_refresh")
 
-                if st.button("💾 Save Preferences", key="save_preferences", use_container_width=True):
+                if st.button("💾 Save Preferences", key="save_preferences", ):
                     st.success("Dashboard preferences saved!")
                     st.session_state['show_preferences'] = False
 
@@ -1242,7 +999,7 @@ def create_sidebar_filters(patients, user, current_disease=None):
                 issue_desc = st.text_area(
                     "Description", key="issue_desc", height=100)
 
-                if st.button("📨 Submit Ticket", key="submit_ticket", use_container_width=True):
+                if st.button("📨 Submit Ticket", key="submit_ticket", width='stretch'):
                     st.success("Help ticket submitted!")
                     st.session_state['show_help'] = False
 
@@ -1257,7 +1014,7 @@ def create_sidebar_filters(patients, user, current_disease=None):
                     "Your Feedback", key="feedback_desc", height=100)
                 rating = st.slider("Rating", 1, 5, 5, key="rating")
 
-                if st.button("📨 Submit Feedback", key="submit_feedback", use_container_width=True):
+                if st.button("📨 Submit Feedback", key="submit_feedback", width='stretch'):
                     st.success("Thank you for your feedback!")
                     st.session_state['show_feedback'] = False
 
@@ -1282,7 +1039,7 @@ def create_sidebar_filters(patients, user, current_disease=None):
                     key="selected_account"
                 )
 
-                if st.button("🔓 Switch", key="switch_account_btn", use_container_width=True):
+                if st.button("🔓 Switch", key="switch_account_btn", width='stretch'):
                     st.warning("Account switching requires re-authentication")
                     st.session_state['show_switch_account'] = False
 
@@ -1293,8 +1050,8 @@ def main_dashboard():
     """Main dashboard function"""
     
     # Show loading state
-    with st.spinner("🔄 Loading Clinical Intelligence Platform..."):
-        time.sleep(0.1)  # Small delay for better UX
+    #with st.spinner("🔄 Loading Clinical Intelligence Platform..."):
+     #   time.sleep(0.1)  # Small delay for better UX
     
     # Add viewport meta tag
     st.markdown("""
@@ -1530,13 +1287,13 @@ def main_dashboard():
         col1, col2 = st.columns([3, 2])
 
         with col1:
-            st.plotly_chart(fig1, use_container_width=True)
+            st.plotly_chart(fig1, width='stretch')
 
         with col2:
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, width='stretch')
 
         # Row 2: Heatmap
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(fig3, width='stretch')
 
         # Row 3: Quick stats (using FILTERED data)
         st.subheader("📋 Quick Statistics (Filtered Data)")
@@ -1649,7 +1406,7 @@ def main_dashboard():
                 
                 st.dataframe(
                     display_all_patients.iloc[start_idx_all:end_idx_all][available_columns],
-                    use_container_width=True,
+                    width='stretch',
                     height=400
                 )
                 
@@ -1772,7 +1529,7 @@ def main_dashboard():
             # Export options
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("📊 Export to Excel", use_container_width=True):
+                if st.button("📊 Export to Excel", width='stretch'):
                     sorted_df[display_cols].to_excel(
                         'patient_data.xlsx', index=False)
                     st.success("✅ Exported to patient_data.xlsx")
@@ -1784,7 +1541,7 @@ def main_dashboard():
                     data=csv,
                     file_name="patient_data.csv",
                     mime="text/csv",
-                    use_container_width=True
+                    width='stretch'
                 )
                 
     # TAB 3: Site Analytics
@@ -1816,7 +1573,7 @@ def main_dashboard():
                     )
 
                 st.dataframe(
-                    metrics_grid, use_container_width=True, height=300)
+                    metrics_grid, width='stretch', height=300)
 
             # Site drill-down
             st.subheader("Site Drill-down Analysis")
@@ -1885,7 +1642,7 @@ def main_dashboard():
                 yaxis_title="Risk Level"
             )
 
-            st.plotly_chart(fig_risk, use_container_width=True)
+            st.plotly_chart(fig_risk, width='stretch')
 
     # TAB 5: AI Insights
     with tab5:
@@ -1897,11 +1654,17 @@ def main_dashboard():
         col1, col2 = st.columns(2)
 
         with col1:
-            # Enrollment prediction
+            # Enrollment prediction - FIXED
             st.markdown("#### Enrollment Forecast")
             current = summary['total_patients']
             target = DEFAULT_TRIAL['target_patients']
-            progress = (current / target) * 100
+            
+            # Calculate progress, but CAP at 100%
+            progress = min((current / target) * 100, 100)  # <-- ADDED min() function
+            
+            # Show warning if over-enrolled
+            if current > target:
+                st.warning(f"⚠️ Over-enrolled by {current - target} patients")
 
             fig_enroll = go.Figure(go.Indicator(
                 mode="gauge+number",
@@ -1922,10 +1685,90 @@ def main_dashboard():
                     }
                 }
             ))
+            
+            fig_enroll.update_layout(height=250)  # <-- KEEP THIS, it belongs to fig_enroll
+            st.plotly_chart(fig_enroll, width='stretch')  # <-- KEEP THIS, it belongs to col1
 
-            fig_enroll.update_layout(height=250)
-            st.plotly_chart(fig_enroll, use_container_width=True)
+        with col2:
+            # Risk prediction
+            st.markdown("#### Risk Prediction")
+            
+            if 'risk_level' in filtered_patients.columns:
+                risk_counts = filtered_patients['risk_level'].value_counts()
+                total = len(filtered_patients)
+                
+                # Calculate percentages
+                risk_data = {
+                    'Low': (risk_counts.get('Low', 0) / total * 100),
+                    'Medium': (risk_counts.get('Medium', 0) / total * 100),
+                    'High': (risk_counts.get('High', 0) / total * 100)
+                }
+                
+                fig_risk = go.Figure(data=[go.Bar(
+                    x=list(risk_data.keys()),
+                    y=list(risk_data.values()),
+                    marker_color=['#28a745', '#ffc107', '#dc3545'],  # Green, Yellow, Red
+                    text=[f"{v:.1f}%" for v in risk_data.values()],
+                    textposition='auto',
+                )])
+                
+                fig_risk.update_layout(
+                    height=250,
+                    title="Patient Risk Distribution",
+                    yaxis_title="Percentage (%)",
+                    yaxis_range=[0, 100]
+                )
+                
+                st.plotly_chart(fig_risk, width='stretch')
+            else:
+                st.info("Risk level data not available")
 
+        # Add another row for more AI insights
+        st.markdown("---")
+        st.subheader("📊 Predictive Analytics")
+
+        col3, col4 = st.columns(2)
+
+        with col3:
+            # DQI Trend Prediction
+            st.markdown("#### DQI Trend Forecast")
+            
+            if 'dqi_score' in filtered_patients.columns:
+                # Simple trend calculation
+                avg_dqi = filtered_patients['dqi_score'].mean()
+                predicted = min(avg_dqi + 2.5, 100)  # Predict slight improvement
+                
+                fig_trend = go.Figure(go.Indicator(
+                    mode="number+delta",
+                    value=predicted,
+                    delta={'reference': avg_dqi, 'position': "top"},
+                    title={'text': "Predicted DQI (Next Month)"},
+                    domain={'x': [0, 1], 'y': [0, 1]}
+                ))
+                
+                fig_trend.update_layout(height=215)
+                st.plotly_chart(fig_trend, width='stretch')
+            else:
+                st.info("DQI data not available")
+
+        with col4:
+            # Site Performance Prediction
+            st.markdown("#### Site Performance Alert")
+            
+            if not sites.empty and 'performance_status' in sites.columns:
+                poor_sites = sites[sites['performance_status'].isin(['Poor', 'Needs Improvement'])]
+                
+                if len(poor_sites) > 0:
+                    st.error(f"🚨 {len(poor_sites)} sites need attention")
+                    for idx, site in poor_sites.iterrows():
+                        st.write(f"• **{site['site_id']}**: {site.get('performance_status', 'N/A')}")
+                else:
+                    st.success("✅ All sites performing well")
+            else:
+                st.info("Site performance data not available")
+        
+        # REMOVED THE DUPLICATE LINES - THEY WERE OUTSIDE ANY COLUMN AND REPEATING FIG_ENROLL
+       
     # Footer
     st.markdown("---")
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
