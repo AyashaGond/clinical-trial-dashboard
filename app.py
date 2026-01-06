@@ -770,7 +770,7 @@ def create_sidebar_filters(patients, user, current_disease=None):
                 key="format_type"
             )
 
-            if st.button("🔄 Generate Demo Report", type="secondary", width='stretch', key="generate_report"):
+            if st.button("🔄 Generate Demo Report", type="secondary", key="generate_report"):
                 with st.spinner(f"Creating {report_type} report..."):
                     time.sleep(2)
                     st.success(f"✅ {report_type} report generated!")
@@ -843,39 +843,39 @@ def create_sidebar_filters(patients, user, current_disease=None):
             st.markdown("### 👤 User Menu")
 
             # Menu items as buttons
-            if st.button("👤 Your Profile", key="your_profile", width='stretch'):
+            if st.button("👤 Your Profile", key="your_profile"):
                 st.session_state['show_profile_settings'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("⚙️ Settings", key="user_settings", width='stretch'):
+            if st.button("⚙️ Settings", key="user_settings"):
                 st.session_state['show_account_settings'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("🔐 Security", key="user_security", width='stretch'):
+            if st.button("🔐 Security", key="user_security"):
                 st.session_state['show_security_settings'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("📊 Preferences", key="user_preferences", width='stretch'):
+            if st.button("📊 Preferences", key="user_preferences"):
                 st.session_state['show_preferences'] = True
                 st.session_state['show_profile_menu'] = False
 
             st.markdown("---")
 
-            if st.button("📖 Help & Support", key="user_help", width='stretch'):
+            if st.button("📖 Help & Support", key="user_help"):
                 st.session_state['show_help'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("💬 Send Feedback", key="user_feedback", width='stretch'):
+            if st.button("💬 Send Feedback", key="user_feedback"):
                 st.session_state['show_feedback'] = True
                 st.session_state['show_profile_menu'] = False
 
-            if st.button("🔄 Switch Account", key="switch_account", width='stretch'):
+            if st.button("🔄 Switch Account", key="switch_account"):
                 st.session_state['show_switch_account'] = True
                 st.session_state['show_profile_menu'] = False
 
             st.markdown("---")
 
-            if st.button("🚪 Logout", type="primary", key="sidebar_logout", width='stretch'):
+            if st.button("🚪 Logout", type="primary", key="sidebar_logout"):
                 # Clear session state and rerun
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]
