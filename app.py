@@ -569,45 +569,110 @@ def is_mobile():
 def load_data(disease=None):
     """Load and cache data with optional disease filter"""
     
-    # Generate fallback data immediately
-    # Import inside function to avoid circular imports
     import pandas as pd
     import numpy as np
     import random
     
-    # Create complete dataset
+    # Set seed for reproducibility
+    np.random.seed(42)
+    random.seed(42)
+    
+    # Create COMPLETE dataset
     diseases = ['Oncology', 'Cardiology', 'Neurology', 'Endocrinology']
     sites = ['Site_A', 'Site_B', 'Site_C', 'Site_D', 'Site_E']
+    num_patients = 300  # Changed from 500 to 300 for better display
     
+    # Create patients DataFrame with ALL required columns
+    # Create patients DataFrame with REALISTIC clinical trial values
     patients = pd.DataFrame({
-        'patient_id': [f'P{i:03d}' for i in range(1, 251)],
-        'site_id': [random.choice(sites) for _ in range(250)],
-        'subject_status': random.choices(['Active', 'Completed', 'Dropped'], weights=[70, 20, 10], k=250),
-        'clean_status': random.choices(['Clean', 'Not Clean'], weights=[35, 65], k=250),
-        'dqi_score': np.random.randint(60, 95, 250),
-        'disease': random.choices(diseases, weights=[40, 25, 20, 15], k=250),
-        'risk_level': random.choices(['Low', 'Medium', 'High'], weights=[60, 30, 10], k=250),
-    })
+        'patient_id': [f'PAT-{i:04d}' for i in range(1, num_patients + 1)],
+        'site_id': [random.choice(sites) for _ in range(num_patients)],
+        'subject_status': random.choices(
+            ['Active', 'Completed', 'Screening', 'Withdrawn'], 
+            weights=[60, 25, 10, 5], k=num_patients  # More active, fewer withdrawn
+        ),
+        'clean_status': random.choices(['Clean', 'Not Clean'], weights=[30, 70], k=num_patients),
+        'dqi_score': np.random.normal(78, 8, num_patients).clip(60, 95).astype(int),  # Normal distribution
+        'disease': random.choices(diseases, weights=[40, 25, 20, 15], k=num_patients),
+        'risk_level': random.choices(['Low', 'Medium', 'High'], weights=[60, 30, 10], k=num_patients),  # Mostly low risk
+        
+        # REALISTIC VALUES BELOW:
+        'missing_visits': np.random.choice([0, 1, 2], num_patients, p=[0.7, 0.2, 0.1]),  # Mostly 0
+        'open_queries': np.random.choice([0, 1, 2, 3], num_patients, p=[0.6, 0.2, 0.15, 0.05]),  # Mostly 0-1
+        'safety_issues': np.random.choice([0, 1], num_patients, p=[0.85, 0.15]),  # 85% have 0
+        'adverse_events': np.random.choice([0, 1, 2], num_patients, p=[0.8, 0.15, 0.05]),
+        'visits_completed': np.random.randint(2, 10, num_patients),  # 2-9 visits
+        'forms_verified': np.random.randint(5, 25, num_patients),   # 5-24 forms (NOT 0-100!)
+        'protocol_deviations': np.random.choice([0, 1], num_patients, p=[0.9, 0.1]),  # 90% have 0
+        'total_queries': np.random.choice([0, 1, 2, 3, 4], num_patients, p=[0.4, 0.3, 0.15, 0.1, 0.05]),
+        'enrollment_date': pd.date_range(start='2023-01-01', periods=num_patients, freq='D').date
+        })
     
+    # Add queries_resolved column
+    patients['queries_resolved'] = patients.apply(
+        lambda row: random.randint(0, row['total_queries']), axis=1
+    )
+    
+    # Create sites data
     sites_df = pd.DataFrame({
         'site_id': sites,
         'region': ['North', 'South', 'East', 'West', 'Central'],
+        'total_patients_enrolled': [60, 58, 62, 61, 59],  # Reduced to match 300 total
+        'clean_percentage': [35.2, 42.1, 38.5, 40.7, 37.8],
         'avg_dqi': [77.2, 75.8, 79.1, 76.5, 78.3],
+        'total_open_queries': np.random.randint(10, 30, 5),  # Reduced
+        'total_safety_issues': np.random.randint(2, 10, 5),  # Reduced
+        'performance_status': ['Good', 'Average', 'Excellent', 'Average', 'Good']
     })
     
+    # Create queries data
+    num_queries = 150  # Reduced
     queries_df = pd.DataFrame({
-        'query_id': [f'Q{i:04d}' for i in range(1, 101)],
-        'patient_id': random.choices(patients['patient_id'].tolist(), k=100),
+        'query_id': [f'QRY-{i:05d}' for i in range(1, num_queries + 1)],
+        'patient_id': random.choices(patients['patient_id'].tolist(), k=num_queries),
+        'disease': random.choices(diseases, k=num_queries),
+        'query_type': random.choices(
+            ['Data Entry', 'Missing Value', 'Safety', 'Protocol'], 
+            weights=[40, 30, 15, 15], k=num_queries
+        ),
+        'query_status': random.choices(['Open', 'Resolved'], weights=[40, 60], k=num_queries),
+        'query_priority': random.choices(['Low', 'Medium', 'High'], 
+                                         weights=[50, 30, 20], k=num_queries),
+        'created_date': pd.date_range(start='2023-06-01', periods=num_queries, freq='H'),
+        'assigned_to': random.choices(['Dr. Smith', 'Dr. Johnson', 'Dr. Williams'], 
+                                      k=num_queries)
     })
+    
+    # Add resolved_date
+    queries_df['resolved_date'] = queries_df.apply(
+        lambda row: row['created_date'] + pd.Timedelta(hours=random.randint(1, 72)) 
+        if row['query_status'] == 'Resolved' else pd.NaT,
+        axis=1
+    )
     
     # If disease filter is provided, filter the data
     if disease and 'disease' in patients.columns:
-        patients = patients[patients['disease'] == disease]
-        # Also filter sites based on patients
-        site_ids = patients['site_id'].unique()
-        sites_df = sites_df[sites_df['site_id'].isin(site_ids)]
+        filtered_patients = patients[patients['disease'] == disease].copy()  # ADD .copy()
+        filtered_patients = filtered_patients.reset_index(drop=True)  # RESET INDEX
+        
+        # Update patient IDs to be sequential after filtering
+        filtered_patients['patient_id'] = [f'PAT-{i:04d}' for i in range(1, len(filtered_patients) + 1)]
+        
+        site_ids = filtered_patients['site_id'].unique()
+        filtered_sites = sites_df[sites_df['site_id'].isin(site_ids)].copy()
+        filtered_queries = queries_df[queries_df['disease'] == disease].copy()
+        
+        # Also update query IDs to be sequential
+        if len(filtered_queries) > 0:
+            filtered_queries = filtered_queries.reset_index(drop=True)
+            filtered_queries['query_id'] = [f'QRY-{i:05d}' for i in range(1, len(filtered_queries) + 1)]
+        
+        return filtered_patients, filtered_sites, filtered_queries
     
+    # For unfiltered data, also ensure it's sequential
+    patients = patients.reset_index(drop=True)
     return patients, sites_df, queries_df
+
 def create_pharma_header(user):
     """Create clean pharmaceutical header with only platform name and login time"""
 
@@ -1229,7 +1294,7 @@ def main_dashboard():
     
     # Show loading state
     with st.spinner("🔄 Loading Clinical Intelligence Platform..."):
-        time.sleep(0.5)  # Small delay for better UX
+        time.sleep(0.1)  # Small delay for better UX
     
     # Add viewport meta tag
     st.markdown("""
@@ -1313,6 +1378,14 @@ def main_dashboard():
     # Calculate metrics
     summary = DataHelper.calculate_summary_statistics(filtered_patients)
 
+    # Add this RIGHT AFTER calculating summary in main_dashboard():
+    #st.write("🔍 DEBUG - Forms Verified values:")
+    #st.write(f"Min: {filtered_patients['forms_verified'].min()}")
+    #st.write(f"Max: {filtered_patients['forms_verified'].max()}")
+    #st.write(f"Mean: {filtered_patients['forms_verified'].mean()}")
+    #st.write(f"Sum: {filtered_patients['forms_verified'].sum()}")
+    #st.write(f"Count: {len(filtered_patients)}")
+    
     # Key Metrics Cards - RESPONSIVE
     st.markdown("### 📊 Key Performance Indicators")
     
@@ -1480,8 +1553,15 @@ def main_dashboard():
             st.metric("Query Resolution", f"{query_resolution:.1f}%")
 
         with col3:
-            forms_verified = (filtered_patients['forms_verified'].sum(
-            ) / len(filtered_patients) * 100) if 'forms_verified' in filtered_patients.columns else 0
+            if 'forms_verified' in filtered_patients.columns:
+                # If values are already 0-100%, just take mean
+                forms_verified = filtered_patients['forms_verified'].mean()
+                
+                # If mean is > 100, values are wrong - cap at 100
+                if forms_verified > 100:
+                    forms_verified = 100
+            else:
+                forms_verified = 0
             st.metric("Forms Verified", f"{forms_verified:.1f}%")
 
         with col4:
