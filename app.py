@@ -1406,7 +1406,7 @@ def main_dashboard():
                 
                 st.dataframe(
                     display_all_patients.iloc[start_idx_all:end_idx_all][available_columns],
-                    width='stretch',
+                    #width='stretch',
                     height=400
                 )
                 
@@ -1517,7 +1517,7 @@ def main_dashboard():
             
             st.dataframe(
                 sorted_df.iloc[start_idx:end_idx][display_cols],
-                width='stretch',
+                #width='stretch',
                 height=400
             )
             
@@ -1642,7 +1642,7 @@ def main_dashboard():
                 yaxis_title="Risk Level"
             )
 
-            st.plotly_chart(fig_risk, width='stretch')
+            st.plotly_chart(fig_risk)
 
     # TAB 5: AI Insights
     with tab5:
@@ -1687,7 +1687,7 @@ def main_dashboard():
             ))
             
             fig_enroll.update_layout(height=250)  # <-- KEEP THIS, it belongs to fig_enroll
-            st.plotly_chart(fig_enroll, width='stretch')  # <-- KEEP THIS, it belongs to col1
+            st.plotly_chart(fig_enroll)  # <-- KEEP THIS, it belongs to col1
 
         with col2:
             # Risk prediction
@@ -1747,7 +1747,7 @@ def main_dashboard():
                 ))
                 
                 fig_trend.update_layout(height=215)
-                st.plotly_chart(fig_trend, width='stretch')
+                st.plotly_chart(fig_trend)
             else:
                 st.info("DQI data not available")
 
