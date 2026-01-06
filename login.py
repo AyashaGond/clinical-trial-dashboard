@@ -6,6 +6,10 @@ import json
 import os
 from datetime import datetime
 
+import streamlit as st
+
+# Rest of your login code...
+
 class LoginSystem:
     def __init__(self):
         self.users_file = 'users.json'
@@ -87,10 +91,10 @@ def main_login():
     <div style="
         max-width: 400px;
         margin: 100px auto;
-        padding: 40px;
+        padding: 36px;
         background: white;
         border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        box-shadow: 10px 40px 50px rgba(0.1,0.1,0.1,0.1);
         text-align: center;
     ">
         <h1 style="color: #1f3c88; margin-bottom: 30px;">🏥 Clinical Intelligence Platform</h1>
