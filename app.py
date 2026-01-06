@@ -1215,6 +1215,23 @@ def create_sidebar_filters(patients, user, current_disease=None):
 def main_dashboard():
     """Main dashboard function"""
     
+    # ===== ADD THIS CODE HERE =====
+    # Auto-generate data if missing
+    import os
+    data_files = ['data/patients.csv', 'data/sites.csv', 'data/queries.csv']
+    
+    if not all(os.path.exists(f) for f in data_files):
+        try:
+            # Try to import and run data generator
+            from data_generator_final import generate_sample_data
+            with st.spinner("🔄 Generating sample data for first-time use..."):
+                generate_sample_data()
+                st.success("✅ Sample data generated successfully!")
+                st.rerun()  # Refresh to load new data
+        except Exception as e:
+            st.error(f"Data generation failed: {e}")
+            st.info("Please run 'python data_generator_final.py' locally to generate data")
+    
     # Show loading state
     with st.spinner("🔄 Loading Clinical Intelligence Platform..."):
         time.sleep(0.5)  # Small delay for better UX
