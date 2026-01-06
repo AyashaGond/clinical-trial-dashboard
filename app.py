@@ -567,15 +567,47 @@ def is_mobile():
 
 @st.cache_data
 def load_data(disease=None):
+    """Load and cache data with optional disease filter"""
+    
+    # Generate fallback data immediately
+    # Import inside function to avoid circular imports
+    import pandas as pd
+    import numpy as np
+    import random
+    
+    # Create complete dataset
+    diseases = ['Oncology', 'Cardiology', 'Neurology', 'Endocrinology']
+    sites = ['Site_A', 'Site_B', 'Site_C', 'Site_D', 'Site_E']
+    
+    patients = pd.DataFrame({
+        'patient_id': [f'P{i:03d}' for i in range(1, 251)],
+        'site_id': [random.choice(sites) for _ in range(250)],
+        'subject_status': random.choices(['Active', 'Completed', 'Dropped'], weights=[70, 20, 10], k=250),
+        'clean_status': random.choices(['Clean', 'Not Clean'], weights=[35, 65], k=250),
+        'dqi_score': np.random.randint(60, 95, 250),
+        'disease': random.choices(diseases, weights=[40, 25, 20, 15], k=250),
+        'risk_level': random.choices(['Low', 'Medium', 'High'], weights=[60, 30, 10], k=250),
+    })
+    
+    sites_df = pd.DataFrame({
+        'site_id': sites,
+        'region': ['North', 'South', 'East', 'West', 'Central'],
+        'avg_dqi': [77.2, 75.8, 79.1, 76.5, 78.3],
+    })
+    
+    queries_df = pd.DataFrame({
+        'query_id': [f'Q{i:04d}' for i in range(1, 101)],
+        'patient_id': random.choices(patients['patient_id'].tolist(), k=100),
+    })
+    
     # If disease filter is provided, filter the data
     if disease and 'disease' in patients.columns:
         patients = patients[patients['disease'] == disease]
         # Also filter sites based on patients
         site_ids = patients['site_id'].unique()
-        sites = sites[sites['site_id'].isin(site_ids)]
+        sites_df = sites_df[sites_df['site_id'].isin(site_ids)]
     
-    return patients, sites, queries
-
+    return patients, sites_df, queries_df
 def create_pharma_header(user):
     """Create clean pharmaceutical header with only platform name and login time"""
 
