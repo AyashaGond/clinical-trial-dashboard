@@ -13,23 +13,6 @@ import time
 import plotly.graph_objects as go
 import plotly.express as px
 
-# Add utils to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
-
-# Import project modules
-
-# Page configuration
-st.set_page_config(
-    page_title="Clinical Intelligence Platform",
-    page_icon="🏥",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': 'https://www.novartis.com',
-        'Report a bug': None,
-        'About': "Clinical Trial Intelligence Dashboard v1.0"
-    }
-)
 
 # Enhanced Custom CSS for pharmaceutical look
 st.markdown("""
@@ -584,9 +567,6 @@ def is_mobile():
 
 @st.cache_data
 def load_data(disease=None):
-    """Load and cache data with optional disease filter"""
-    patients, sites, queries = load_and_process_data()
-    
     # If disease filter is provided, filter the data
     if disease and 'disease' in patients.columns:
         patients = patients[patients['disease'] == disease]
@@ -1214,23 +1194,6 @@ def create_sidebar_filters(patients, user, current_disease=None):
 
 def main_dashboard():
     """Main dashboard function"""
-    
-    # ===== ADD THIS CODE HERE =====
-    # Auto-generate data if missing
-    import os
-    data_files = ['data/patients.csv', 'data/sites.csv', 'data/queries.csv']
-    
-    if not all(os.path.exists(f) for f in data_files):
-        try:
-            # Try to import and run data generator
-            from data_generator_final import generate_sample_data
-            with st.spinner("🔄 Generating sample data for first-time use..."):
-                generate_sample_data()
-                st.success("✅ Sample data generated successfully!")
-                st.rerun()  # Refresh to load new data
-        except Exception as e:
-            st.error(f"Data generation failed: {e}")
-            st.info("Please run 'python data_generator_final.py' locally to generate data")
     
     # Show loading state
     with st.spinner("🔄 Loading Clinical Intelligence Platform..."):

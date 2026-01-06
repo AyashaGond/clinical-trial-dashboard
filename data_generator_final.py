@@ -318,4 +318,4 @@ def generate_queries_for_trial(patient_df, trial_id):
     return queries
 
 if __name__ == "__main__":
-    generate_multi_disease_data()
+   generate_multi_disease_data()
