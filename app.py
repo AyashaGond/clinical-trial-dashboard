@@ -310,7 +310,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-
 def is_mobile():
     """Detect if user is on mobile device"""
     try:
@@ -322,66 +321,77 @@ def is_mobile():
     except:
         return False
 
+
 @st.cache_data
 def load_data(disease=None):
     """Load and cache data with optional disease filter"""
-    
+
     import pandas as pd
     import numpy as np
     import random
-    
+
     # Set seed for reproducibility
     np.random.seed(42)
     random.seed(42)
-    
+
     # Create COMPLETE dataset
     diseases = ['Oncology', 'Cardiology', 'Neurology', 'Endocrinology']
     sites = ['Site_A', 'Site_B', 'Site_C', 'Site_D', 'Site_E']
     num_patients = 300  # Changed from 500 to 300 for better display
-    
+
     # Create patients DataFrame with ALL required columns
     # Create patients DataFrame with REALISTIC clinical trial values
     patients = pd.DataFrame({
         'patient_id': [f'PAT-{i:04d}' for i in range(1, num_patients + 1)],
         'site_id': [random.choice(sites) for _ in range(num_patients)],
         'subject_status': random.choices(
-            ['Active', 'Completed', 'Screening', 'Withdrawn'], 
-            weights=[60, 25, 10, 5], k=num_patients  # More active, fewer withdrawn
+            ['Active', 'Completed', 'Screening', 'Withdrawn'],
+            # More active, fewer withdrawn
+            weights=[60, 25, 10, 5], k=num_patients
         ),
         'clean_status': random.choices(['Clean', 'Not Clean'], weights=[30, 70], k=num_patients),
-        'dqi_score': np.random.normal(78, 8, num_patients).clip(60, 95).astype(int),  # Normal distribution
+        # Normal distribution
+        'dqi_score': np.random.normal(78, 8, num_patients).clip(60, 95).astype(int),
         'disease': random.choices(diseases, weights=[40, 25, 20, 15], k=num_patients),
-        'risk_level': random.choices(['Low', 'Medium', 'High'], weights=[60, 30, 10], k=num_patients),  # Mostly low risk
-        
+        # Mostly low risk
+        'risk_level': random.choices(['Low', 'Medium', 'High'], weights=[60, 30, 10], k=num_patients),
+
         # REALISTIC VALUES BELOW:
-        'missing_visits': np.random.choice([0, 1, 2], num_patients, p=[0.7, 0.2, 0.1]),  # Mostly 0
-        'open_queries': np.random.choice([0, 1, 2, 3], num_patients, p=[0.6, 0.2, 0.15, 0.05]),  # Mostly 0-1
-        'safety_issues': np.random.choice([0, 1], num_patients, p=[0.85, 0.15]),  # 85% have 0
+        # Mostly 0
+        'missing_visits': np.random.choice([0, 1, 2], num_patients, p=[0.7, 0.2, 0.1]),
+        # Mostly 0-1
+        'open_queries': np.random.choice([0, 1, 2, 3], num_patients, p=[0.6, 0.2, 0.15, 0.05]),
+        # 85% have 0
+        'safety_issues': np.random.choice([0, 1], num_patients, p=[0.85, 0.15]),
         'adverse_events': np.random.choice([0, 1, 2], num_patients, p=[0.8, 0.15, 0.05]),
-        'visits_completed': np.random.randint(2, 10, num_patients),  # 2-9 visits
-        'forms_verified': np.random.randint(5, 25, num_patients),   # 5-24 forms (NOT 0-100!)
-        'protocol_deviations': np.random.choice([0, 1], num_patients, p=[0.9, 0.1]),  # 90% have 0
+        # 2-9 visits
+        'visits_completed': np.random.randint(2, 10, num_patients),
+        # 5-24 forms (NOT 0-100!)
+        'forms_verified': np.random.randint(5, 25, num_patients),
+        # 90% have 0
+        'protocol_deviations': np.random.choice([0, 1], num_patients, p=[0.9, 0.1]),
         'total_queries': np.random.choice([0, 1, 2, 3, 4], num_patients, p=[0.4, 0.3, 0.15, 0.1, 0.05]),
         'enrollment_date': pd.date_range(start='2023-01-01', periods=num_patients, freq='D').date
-        })
-    
+    })
+
     # Add queries_resolved column
     patients['queries_resolved'] = patients.apply(
         lambda row: random.randint(0, row['total_queries']), axis=1
     )
-    
+
     # Create sites data
     sites_df = pd.DataFrame({
         'site_id': sites,
         'region': ['North', 'South', 'East', 'West', 'Central'],
-        'total_patients_enrolled': [60, 58, 62, 61, 59],  # Reduced to match 300 total
+        # Reduced to match 300 total
+        'total_patients_enrolled': [60, 58, 62, 61, 59],
         'clean_percentage': [35.2, 42.1, 38.5, 40.7, 37.8],
         'avg_dqi': [77.2, 75.8, 79.1, 76.5, 78.3],
         'total_open_queries': np.random.randint(10, 30, 5),  # Reduced
         'total_safety_issues': np.random.randint(2, 10, 5),  # Reduced
         'performance_status': ['Good', 'Average', 'Excellent', 'Average', 'Good']
     })
-    
+
     # Create queries data
     num_queries = 150  # Reduced
     queries_df = pd.DataFrame({
@@ -389,64 +399,70 @@ def load_data(disease=None):
         'patient_id': random.choices(patients['patient_id'].tolist(), k=num_queries),
         'disease': random.choices(diseases, k=num_queries),
         'query_type': random.choices(
-            ['Data Entry', 'Missing Value', 'Safety', 'Protocol'], 
+            ['Data Entry', 'Missing Value', 'Safety', 'Protocol'],
             weights=[40, 30, 15, 15], k=num_queries
         ),
         'query_status': random.choices(['Open', 'Resolved'], weights=[40, 60], k=num_queries),
-        'query_priority': random.choices(['Low', 'Medium', 'High'], 
+        'query_priority': random.choices(['Low', 'Medium', 'High'],
                                          weights=[50, 30, 20], k=num_queries),
         'created_date': pd.date_range(start='2023-06-01', periods=num_queries, freq='h'),
-        'assigned_to': random.choices(['Dr. Smith', 'Dr. Johnson', 'Dr. Williams'], 
+        'assigned_to': random.choices(['Dr. Smith', 'Dr. Johnson', 'Dr. Williams'],
                                       k=num_queries)
     })
-    
+
     # Add resolved_date
     queries_df['resolved_date'] = queries_df.apply(
-        lambda row: row['created_date'] + pd.Timedelta(hours=random.randint(1, 72)) 
+        lambda row: row['created_date'] +
+        pd.Timedelta(hours=random.randint(1, 72))
         if row['query_status'] == 'Resolved' else pd.NaT,
         axis=1
     )
-    
+
     # If disease filter is provided, filter the data
     if disease and 'disease' in patients.columns:
-        filtered_patients = patients[patients['disease'] == disease].copy()  # ADD .copy()
-        filtered_patients = filtered_patients.reset_index(drop=True)  # RESET INDEX
-        
+        # ADD .copy()
+        filtered_patients = patients[patients['disease'] == disease].copy()
+        filtered_patients = filtered_patients.reset_index(
+            drop=True)  # RESET INDEX
+
         # Update patient IDs to be sequential after filtering
-        filtered_patients['patient_id'] = [f'PAT-{i:04d}' for i in range(1, len(filtered_patients) + 1)]
-        
+        filtered_patients['patient_id'] = [
+            f'PAT-{i:04d}' for i in range(1, len(filtered_patients) + 1)]
+
         site_ids = filtered_patients['site_id'].unique()
         filtered_sites = sites_df[sites_df['site_id'].isin(site_ids)].copy()
         filtered_queries = queries_df[queries_df['disease'] == disease].copy()
-        
+
         # Also update query IDs to be sequential
         if len(filtered_queries) > 0:
             filtered_queries = filtered_queries.reset_index(drop=True)
-            filtered_queries['query_id'] = [f'QRY-{i:05d}' for i in range(1, len(filtered_queries) + 1)]
-        
+            filtered_queries['query_id'] = [
+                f'QRY-{i:05d}' for i in range(1, len(filtered_queries) + 1)]
+
         return filtered_patients, filtered_sites, filtered_queries
-    
+
     # For unfiltered data, also ensure it's sequential
     patients = patients.reset_index(drop=True)
     return patients, sites_df, queries_df
+
 
 def create_pharma_header(user):
     """Create clean pharmaceutical header with only platform name and login time"""
 
     # Use the blue color from your screenshot
     header_bg_color = "#0d1b2a"  # Professional blue
-     
-     # Check if mobile
+
+    # Check if mobile
     mobile = is_mobile()
-    
+
     # Adjust font sizes based on device
     title_size = "22px" if mobile else "26px"
     subtitle_size = "12px" if mobile else "14px"
-     
+
     # Create header with Streamlit components
     with st.container():
         col1, col2 = st.columns([6, 1])
-        
+
         with col1:
             # SIMPLE header without disease info
             st.markdown(f"""
@@ -499,7 +515,7 @@ def create_pharma_header(user):
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        
+
         with col2:
             # Empty column
             st.markdown("""
@@ -653,7 +669,7 @@ def create_sidebar_filters(patients, user, current_disease=None):
         # Show current disease
         if current_disease:
             st.info(f"**Viewing:** {current_disease} Trials")
-        
+
         # Site selection - NO DEFAULT SELECTIONS
         st.markdown("**Site Selection**")
         if 'site_id' in patients.columns:
@@ -747,7 +763,6 @@ def create_sidebar_filters(patients, user, current_disease=None):
         else:
             date_range = (datetime.now().date() -
                           timedelta(days=365), datetime.now().date())
-
 
         # Export Demo Feature
         st.markdown("---")
@@ -1048,22 +1063,22 @@ def create_sidebar_filters(patients, user, current_disease=None):
 
 def main_dashboard():
     """Main dashboard function"""
-    
+
     # Show loading state
-    #with st.spinner("🔄 Loading Clinical Intelligence Platform..."):
-     #   time.sleep(0.1)  # Small delay for better UX
-    
+    # with st.spinner("🔄 Loading Clinical Intelligence Platform..."):
+    #   time.sleep(0.1)  # Small delay for better UX
+
     # Add viewport meta tag
     st.markdown("""
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     """, unsafe_allow_html=True)
-    
+
     # Check login
     if not main_login():
         return
 
     user = st.session_state.get('user', {})
-    
+
     # Get current disease from session state (default to 'Oncology')
     current_disease = st.session_state.get('current_disease', 'Oncology')
 
@@ -1082,7 +1097,6 @@ def main_dashboard():
     create_pharma_header(user)
 
     st.markdown("</div>", unsafe_allow_html=True)
-    
 
     # Load data WITH disease filter
     with st.spinner(f"🔄 Loading {current_disease} trial data..."):
@@ -1101,7 +1115,7 @@ def main_dashboard():
             # You would call your data generator here
             st.info("Please run 'python data_generator.py' to generate data")
         return
-    
+
     # Create sidebar filters - pass disease info
     selected_sites, selected_status, clean_filter, risk_filter, dqi_range, date_range = create_sidebar_filters(
         patients, user, current_disease)
@@ -1136,23 +1150,23 @@ def main_dashboard():
     summary = DataHelper.calculate_summary_statistics(filtered_patients)
 
     # Add this RIGHT AFTER calculating summary in main_dashboard():
-    #st.write("🔍 DEBUG - Forms Verified values:")
-    #st.write(f"Min: {filtered_patients['forms_verified'].min()}")
-    #st.write(f"Max: {filtered_patients['forms_verified'].max()}")
-    #st.write(f"Mean: {filtered_patients['forms_verified'].mean()}")
-    #st.write(f"Sum: {filtered_patients['forms_verified'].sum()}")
-    #st.write(f"Count: {len(filtered_patients)}")
-    
+    # st.write("🔍 DEBUG - Forms Verified values:")
+    # st.write(f"Min: {filtered_patients['forms_verified'].min()}")
+    # st.write(f"Max: {filtered_patients['forms_verified'].max()}")
+    # st.write(f"Mean: {filtered_patients['forms_verified'].mean()}")
+    # st.write(f"Sum: {filtered_patients['forms_verified'].sum()}")
+    # st.write(f"Count: {len(filtered_patients)}")
+
     # Key Metrics Cards - RESPONSIVE
     st.markdown("### 📊 Key Performance Indicators")
-    
+
     # Check if mobile
     mobile = is_mobile()
-    
+
     # Adjust number of columns based on device
     num_metric_cols = 2 if mobile else 4
     metric_cols = st.columns(num_metric_cols)
-    
+
     # If mobile, show metrics in 2 columns with different arrangement
     if mobile:
         # Column 1 on mobile
@@ -1160,7 +1174,7 @@ def main_dashboard():
             # Total Patients Card
             total_patients = summary['total_patients']
             active_patients = len(filtered_patients[filtered_patients['subject_status']
-                              == 'Active']) if 'subject_status' in filtered_patients.columns else 0
+                                                    == 'Active']) if 'subject_status' in filtered_patients.columns else 0
             delta = f"+{int(total_patients * 0.1)}" if total_patients > 0 else "0"
             st.markdown(create_metric_card(
                 "Total Patients",
@@ -1170,8 +1184,8 @@ def main_dashboard():
                 icon="👥"
             ), unsafe_allow_html=True)
             st.caption(f"📈 {active_patients} active")
-        
-        # Column 2 on mobile  
+
+        # Column 2 on mobile
         with metric_cols[1]:
             # Clean Patients Card
             clean_pct = summary['clean_percentage']
@@ -1186,13 +1200,13 @@ def main_dashboard():
                 icon="✅"
             ), unsafe_allow_html=True)
             st.caption(f"🎯 Target: 70%")
-    
+
     else:  # Desktop - show all 4 metrics
         with metric_cols[0]:
             # Total Patients Card
             total_patients = summary['total_patients']
             active_patients = len(filtered_patients[filtered_patients['subject_status']
-                              == 'Active']) if 'subject_status' in filtered_patients.columns else 0
+                                                    == 'Active']) if 'subject_status' in filtered_patients.columns else 0
             delta = f"+{int(total_patients * 0.1)}" if total_patients > 0 else "0"
             st.markdown(create_metric_card(
                 "Total Patients",
@@ -1202,7 +1216,7 @@ def main_dashboard():
                 icon="👥"
             ), unsafe_allow_html=True)
             st.caption(f"📈 {active_patients} active patients")
-        
+
         with metric_cols[1]:
             # Clean Patients Card
             clean_pct = summary['clean_percentage']
@@ -1217,13 +1231,14 @@ def main_dashboard():
                 icon="✅"
             ), unsafe_allow_html=True)
             st.caption(f"🎯 Target: 70% • Current: {clean_count} patients")
-        
+
         with metric_cols[2]:
             # Average DQI Card
             avg_dqi = summary['avg_dqi']
             dqi_status = "good" if avg_dqi >= 75 else (
                 "warning" if avg_dqi >= 60 else "critical")
-            trend = "▲ 2.5" if avg_dqi > 70 else ("▼ 1.2" if avg_dqi < 60 else "━")
+            trend = "▲ 2.5" if avg_dqi > 70 else (
+                "▼ 1.2" if avg_dqi < 60 else "━")
             st.markdown(create_metric_card(
                 "Average DQI",
                 f"{avg_dqi:.1f}",
@@ -1232,7 +1247,7 @@ def main_dashboard():
                 icon="📊"
             ), unsafe_allow_html=True)
             st.caption(f"Score range: 0-100 • Threshold: 75")
-        
+
         with metric_cols[3]:
             # Open Issues Card
             total_issues = summary['total_open_queries'] + \
@@ -1253,11 +1268,12 @@ def main_dashboard():
 
     # Main Tabs - adjust based on device
     mobile = is_mobile()
-    
+
     if mobile:
         # For mobile, use shorter tab names
-        tab_labels = ["📈 Perf", "👥 Patients", "🏥 Sites", "🚨 Risk", "🤖 AI", "🧬 Disease"]
-        tab1, tab2, tab3, tab4, tab5= st.tabs(tab_labels)
+        tab_labels = ["📈 Perf", "👥 Patients",
+                      "🏥 Sites", "🚨 Risk", "🤖 AI", "🧬 Disease"]
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(tab_labels)
     else:
         # For desktop, use full names
         tab_labels = [
@@ -1266,20 +1282,21 @@ def main_dashboard():
             "🏥 Site Analytics",
             "🚨 Risk Monitoring",
             "🤖 AI Insights",
-            
+
         ]
-        tab1, tab2, tab3, tab4, tab5= st.tabs(tab_labels)
-    
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(tab_labels)
+
     # ... rest of your tabs code continues ...
 
         # TAB 1: Performance Dashboard
     with tab1:
         st.header("Performance Analytics")
-        
+
         # Show filter status clearly
         if len(filtered_patients) != len(patients):
-            st.success(f"✅ Filters active: Showing {len(filtered_patients)} of {len(patients)} patients")
-        
+            st.success(
+                f"✅ Filters active: Showing {len(filtered_patients)} of {len(patients)} patients")
+
         # Create visualizations (using FILTERED data for charts)
         fig1, fig2, fig3 = create_visualizations(filtered_patients, sites)
 
@@ -1313,7 +1330,7 @@ def main_dashboard():
             if 'forms_verified' in filtered_patients.columns:
                 # If values are already 0-100%, just take mean
                 forms_verified = filtered_patients['forms_verified'].mean()
-                
+
                 # If mean is > 100, values are wrong - cap at 100
                 if forms_verified > 100:
                     forms_verified = 100
@@ -1325,32 +1342,35 @@ def main_dashboard():
             protocol_deviations = filtered_patients['protocol_deviations'].sum(
             ) if 'protocol_deviations' in filtered_patients.columns else 0
             st.metric("Protocol Deviations", protocol_deviations)
-        
+
         # ========== DATABASE OVERVIEW ==========
         st.subheader("📋 Complete Database Overview")
-        
+
         # Show TOTAL database counts
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Total Patients", len(patients))
         with col2:
-            total_active = len(patients[patients['subject_status'] == 'Active']) if 'subject_status' in patients.columns else 0
+            total_active = len(patients[patients['subject_status'] ==
+                               'Active']) if 'subject_status' in patients.columns else 0
             st.metric("Active Patients", total_active)
         with col3:
-            total_clean = len(patients[patients['clean_status'] == 'Clean']) if 'clean_status' in patients.columns else 0
+            total_clean = len(patients[patients['clean_status'] == 'Clean']
+                              ) if 'clean_status' in patients.columns else 0
             st.metric("Clean Patients", total_clean)
         with col4:
-            total_high_risk = len(patients[patients['risk_level'] == 'High']) if 'risk_level' in patients.columns else 0
+            total_high_risk = len(
+                patients[patients['risk_level'] == 'High']) if 'risk_level' in patients.columns else 0
             st.metric("High Risk Patients", total_high_risk)
-        
+
         # Show ALL PATIENTS with pagination
         st.subheader("👥 Complete Patient Database")
-        
+
         # Add search for ALL patients
-        search_all = st.text_input("🔍 Search all patients...", 
-                                 placeholder="Search in entire database",
-                                 key="search_all_patients")
-        
+        search_all = st.text_input("🔍 Search all patients...",
+                                   placeholder="Search in entire database",
+                                   key="search_all_patients")
+
         if search_all and len(search_all) > 0:
             search_mask = patients.apply(
                 lambda row: search_all.lower() in str(row).lower(), axis=1
@@ -1358,68 +1378,72 @@ def main_dashboard():
             display_all_patients = patients[search_mask]
         else:
             display_all_patients = patients
-        
+
         # Select columns to show - CHECK WHICH COLUMNS EXIST
         # Common patient columns that should exist
         available_columns = []
-        possible_columns = ['patient_id', 'site_id', 'subject_status', 
-                           'clean_status', 'dqi_score', 'risk_level', 
-                           'missing_visits', 'open_queries', 'visits_completed',
-                           'total_queries', 'safety_issues']
-        
+        possible_columns = ['patient_id', 'site_id', 'subject_status',
+                            'clean_status', 'dqi_score', 'risk_level',
+                            'missing_visits', 'open_queries', 'visits_completed',
+                            'total_queries', 'safety_issues']
+
         # Check which columns actually exist in the data
         for col in possible_columns:
             if col in patients.columns:
                 available_columns.append(col)
-        
+
         # If no columns found, use a basic set
         if not available_columns:
             available_columns = list(patients.columns[:5])  # First 5 columns
-        
+
         # Show ALL patients with responsive container
         st.markdown(f"**Total records:** {len(display_all_patients)} patients")
-        
+
         # Add pagination for all patients
         if len(display_all_patients) > 0:
             # Rows per page selector
-            rows_per_page_all = st.selectbox("Rows per page:", 
-                                           [10, 25, 50, 100, 250, 500],
-                                           key="rows_per_page_all",
-                                           index=3)  # Default to 100
-            
+            rows_per_page_all = st.selectbox("Rows per page:",
+                                             [10, 25, 50, 100, 250, 500],
+                                             key="rows_per_page_all",
+                                             index=3)  # Default to 100
+
             # Calculate pagination
-            total_pages_all = max(1, (len(display_all_patients) // rows_per_page_all) + 1)
-            page_all = st.number_input("Page:", 
-                                     min_value=1, 
-                                     max_value=total_pages_all,
-                                     value=1,
-                                     key="page_all")
-            
+            total_pages_all = max(
+                1, (len(display_all_patients) // rows_per_page_all) + 1)
+            page_all = st.number_input("Page:",
+                                       min_value=1,
+                                       max_value=total_pages_all,
+                                       value=1,
+                                       key="page_all")
+
             start_idx_all = (page_all - 1) * rows_per_page_all
-            end_idx_all = min(start_idx_all + rows_per_page_all, len(display_all_patients))
-            
+            end_idx_all = min(start_idx_all + rows_per_page_all,
+                              len(display_all_patients))
+
             # Display ALL patients table with error handling
             try:
                 st.markdown("""
                 <div style="overflow-x: auto; margin: 0 -1rem; padding: 0 1rem;">
                 """, unsafe_allow_html=True)
-                
+
                 st.dataframe(
-                    display_all_patients.iloc[start_idx_all:end_idx_all][available_columns],
-                    #width='stretch',
+                    display_all_patients.iloc[start_idx_all:
+                                              end_idx_all][available_columns],
+                    # width='stretch',
                     height=400
                 )
-                
+
                 st.markdown("</div>", unsafe_allow_html=True)
-                
-                st.caption(f"Showing patients {start_idx_all + 1} to {end_idx_all} of {len(display_all_patients)}")
-                
+
+                st.caption(
+                    f"Showing patients {start_idx_all + 1} to {end_idx_all} of {len(display_all_patients)}")
+
             except Exception as e:
                 st.error(f"Error displaying data: {e}")
                 # Show raw data as fallback
                 st.write("Showing raw data (first 100 rows):")
                 st.dataframe(display_all_patients.head(100))
-            
+
             # Download all data button
             col1, col2 = st.columns(2)
             with col1:
@@ -1432,17 +1456,19 @@ def main_dashboard():
                         mime="text/csv",
                         key="download_all_btn"
                     )
-            
+
             with col2:
                 if st.button("📊 Export All to Excel", key="export_all_excel"):
-                    display_all_patients.to_excel('all_patients_database.xlsx', index=False)
+                    display_all_patients.to_excel(
+                        'all_patients_database.xlsx', index=False)
                     st.success("✅ All patients exported to Excel!")
-        
+
         # Show what percentage is filtered
         if len(filtered_patients) != len(patients):
             filter_percentage = (len(filtered_patients) / len(patients)) * 100
-            st.info(f"📊 **Current filtered view:** {len(filtered_patients)} patients ({filter_percentage:.1f}% of total database)")
-            
+            st.info(
+                f"📊 **Current filtered view:** {len(filtered_patients)} patients ({filter_percentage:.1f}% of total database)")
+
     # TAB 2: Patient Management
     with tab2:
         st.header("Patient Management")
@@ -1506,7 +1532,7 @@ def main_dashboard():
             total_rows = len(sorted_df)
             page_number = st.number_input("Page", min_value=1, value=1, max_value=max(
                 1, (total_rows // items_per_page) + 1))
-            
+
             start_idx = (page_number - 1) * items_per_page
             end_idx = min(start_idx + items_per_page, total_rows)
 
@@ -1514,13 +1540,13 @@ def main_dashboard():
             st.markdown("""
             <div style="overflow-x: auto; margin: 0 -1rem; padding: 0 1rem;">
             """, unsafe_allow_html=True)
-            
+
             st.dataframe(
                 sorted_df.iloc[start_idx:end_idx][display_cols],
-                #width='stretch',
+                # width='stretch',
                 height=400
             )
-            
+
             st.markdown("</div>", unsafe_allow_html=True)
 
             st.caption(
@@ -1533,7 +1559,7 @@ def main_dashboard():
                     sorted_df[display_cols].to_excel(
                         'patient_data.xlsx', index=False)
                     st.success("✅ Exported to patient_data.xlsx")
-                    
+
             with col2:
                 csv = sorted_df[display_cols].to_csv(index=False)
                 st.download_button(
@@ -1543,7 +1569,7 @@ def main_dashboard():
                     mime="text/csv",
                     width='stretch'
                 )
-                
+
     # TAB 3: Site Analytics
     with tab3:
         st.header("Site Performance Analytics")
@@ -1658,10 +1684,11 @@ def main_dashboard():
             st.markdown("#### Enrollment Forecast")
             current = summary['total_patients']
             target = DEFAULT_TRIAL['target_patients']
-            
+
             # Calculate progress, but CAP at 100%
-            progress = min((current / target) * 100, 100)  # <-- ADDED min() function
-            
+            # <-- ADDED min() function
+            progress = min((current / target) * 100, 100)
+
             # Show warning if over-enrolled
             if current > target:
                 st.warning(f"⚠️ Over-enrolled by {current - target} patients")
@@ -1685,40 +1712,42 @@ def main_dashboard():
                     }
                 }
             ))
-            
-            fig_enroll.update_layout(height=250)  # <-- KEEP THIS, it belongs to fig_enroll
+
+            # <-- KEEP THIS, it belongs to fig_enroll
+            fig_enroll.update_layout(height=250)
             st.plotly_chart(fig_enroll)  # <-- KEEP THIS, it belongs to col1
 
         with col2:
             # Risk prediction
             st.markdown("#### Risk Prediction")
-            
+
             if 'risk_level' in filtered_patients.columns:
                 risk_counts = filtered_patients['risk_level'].value_counts()
                 total = len(filtered_patients)
-                
+
                 # Calculate percentages
                 risk_data = {
                     'Low': (risk_counts.get('Low', 0) / total * 100),
                     'Medium': (risk_counts.get('Medium', 0) / total * 100),
                     'High': (risk_counts.get('High', 0) / total * 100)
                 }
-                
+
                 fig_risk = go.Figure(data=[go.Bar(
                     x=list(risk_data.keys()),
                     y=list(risk_data.values()),
-                    marker_color=['#28a745', '#ffc107', '#dc3545'],  # Green, Yellow, Red
+                    marker_color=['#28a745', '#ffc107',
+                                  '#dc3545'],  # Green, Yellow, Red
                     text=[f"{v:.1f}%" for v in risk_data.values()],
                     textposition='auto',
                 )])
-                
+
                 fig_risk.update_layout(
                     height=250,
                     title="Patient Risk Distribution",
                     yaxis_title="Percentage (%)",
                     yaxis_range=[0, 100]
                 )
-                
+
                 st.plotly_chart(fig_risk, width='stretch')
             else:
                 st.info("Risk level data not available")
@@ -1732,12 +1761,13 @@ def main_dashboard():
         with col3:
             # DQI Trend Prediction
             st.markdown("#### DQI Trend Forecast")
-            
+
             if 'dqi_score' in filtered_patients.columns:
                 # Simple trend calculation
                 avg_dqi = filtered_patients['dqi_score'].mean()
-                predicted = min(avg_dqi + 2.5, 100)  # Predict slight improvement
-                
+                # Predict slight improvement
+                predicted = min(avg_dqi + 2.5, 100)
+
                 fig_trend = go.Figure(go.Indicator(
                     mode="number+delta",
                     value=predicted,
@@ -1745,7 +1775,7 @@ def main_dashboard():
                     title={'text': "Predicted DQI (Next Month)"},
                     domain={'x': [0, 1], 'y': [0, 1]}
                 ))
-                
+
                 fig_trend.update_layout(height=215)
                 st.plotly_chart(fig_trend)
             else:
@@ -1754,21 +1784,23 @@ def main_dashboard():
         with col4:
             # Site Performance Prediction
             st.markdown("#### Site Performance Alert")
-            
+
             if not sites.empty and 'performance_status' in sites.columns:
-                poor_sites = sites[sites['performance_status'].isin(['Poor', 'Needs Improvement'])]
-                
+                poor_sites = sites[sites['performance_status'].isin(
+                    ['Poor', 'Needs Improvement'])]
+
                 if len(poor_sites) > 0:
                     st.error(f"🚨 {len(poor_sites)} sites need attention")
                     for idx, site in poor_sites.iterrows():
-                        st.write(f"• **{site['site_id']}**: {site.get('performance_status', 'N/A')}")
+                        st.write(
+                            f"• **{site['site_id']}**: {site.get('performance_status', 'N/A')}")
                 else:
                     st.success("✅ All sites performing well")
             else:
                 st.info("Site performance data not available")
-        
+
         # REMOVED THE DUPLICATE LINES - THEY WERE OUTSIDE ANY COLUMN AND REPEATING FIG_ENROLL
-       
+
     # Footer
     st.markdown("---")
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
