@@ -32,48 +32,6 @@ st.markdown("""
 <style>
     /* ========== FIXED & CLEANED CSS ========== */
     
-    /* Dark mode support */
-    @media (prefers-color-scheme: dark) {
-        .main-header {
-            color: #e0e0ff !important;
-        }
-        
-        .sub-header {
-            color: #b0b0d0 !important;
-        }
-        
-        .metric-card-pharma {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
-            border: 1px solid #333 !important;
-        }
-        
-        .metric-value-pharma {
-            color: #64b5f6 !important;
-        }
-        
-        .metric-label-pharma {
-            color: #b0b0d0 !important;
-        }
-        
-        .pharma-header {
-            background: linear-gradient(135deg, #1f3c88 0%, #0d1b2a 100%) !important;
-        }
-        
-        section[data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%) !important;
-            border-right: 1px solid #333 !important;
-        }
-        
-        .stTabs [data-baseweb="tab-list"] {
-            background: #16213e !important;
-            border: 1px solid #333 !important;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            color: #b0b0d0 !important;
-        }
-    }
-    
     /* Main container styling - REMOVE DUPLICATES */
     .main-header {
         font-size: 28px;
@@ -1638,7 +1596,7 @@ def main_dashboard():
                     )
 
                 st.dataframe(
-                    metrics_grid, height=300)
+                    metrics_grid, width='stretch', height=300)
 
             # Site drill-down
             st.subheader("Site Drill-down Analysis")
