@@ -208,45 +208,23 @@ st.markdown("""
         background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         border-right: 1px solid #e2e8f0;
         box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-        width: 200px !important;
-        min-width: 200px !important;
-        max-width: 200px !important;
+        z-index: 999998 !important;
     }
     
-    /* Main content width adjustment - CRITICAL FIX */
+    /* Main content styling */
     .stApp {
-        width: 100vw !important;
-        max-width: 100vw !important;
-        overflow-x: hidden !important;
+        display: flex !important;
+    }
+    
+    .main {
+        flex: 1 !important;
+        width: 100% !important;
     }
     
     .main .block-container {
         width: 100% !important;
         max-width: 100% !important;
         padding: 1rem 2rem !important;
-        transition: margin-left 0.3s ease !important;
-    }
-    
-    /* When sidebar is EXPANDED - FIXED */
-    section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {
-        margin-left: 200px !important;
-        width: calc(100vw - 200px) !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-    }
-    
-    /* When sidebar is COLLAPSED - FIXED */
-    section[data-testid="stSidebar"][aria-expanded="false"] {
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: 0 !important;
-    }
-    
-    section[data-testid="stSidebar"][aria-expanded="false"] ~ .main .block-container {
-        margin-left: 0 !important;
-        width: 100vw !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
     }
     
     /* Hide sidebar content when collapsed */
@@ -1605,8 +1583,7 @@ def main_dashboard():
                     label="📥 Download CSV",
                     data=csv,
                     file_name="patient_data.csv",
-                    mime="text/csv",
-                    width='stretch'
+                    mime="text/csv"
                 )
 
     # TAB 3: Site Analytics
