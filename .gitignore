@@ -1,20 +1,10 @@
-<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-=======
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[codz]
-*$py.class
-
-# C extensions
-*.so
 
 # Distribution / packaging
->>>>>>> 17973c21ad0a2a59a74ec1faf49633fc9a74ac8b
 .Python
 build/
 develop-eggs/
