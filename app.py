@@ -208,23 +208,6 @@ st.markdown("""
         background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         border-right: 1px solid #e2e8f0;
         box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-        z-index: 999998 !important;
-    }
-    
-    /* Main content styling */
-    .stApp {
-        display: flex !important;
-    }
-    
-    .main {
-        flex: 1 !important;
-        width: 100% !important;
-    }
-    
-    .main .block-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 1rem 2rem !important;
     }
     
     /* Hide sidebar content when collapsed */
@@ -270,18 +253,6 @@ st.markdown("""
             height: 45px !important;
             padding: 0 8px !important;
             margin-bottom: 4px;
-        }
-        
-        /* Mobile sidebar */
-        section[data-testid="stSidebar"] {
-            width: 280px !important;
-            min-width: 280px !important;
-            max-width: 280px !important;
-        }
-        
-        section[data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {
-            margin-left: 280px !important;
-            width: calc(100vw - 280px) !important;
         }
     }
     
